@@ -3,12 +3,31 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TOP-Network", "TOP-Network\TOP-Network.csproj", "{075A7CAE-CB13-4061-89E7-A7792CA39AA9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Records", "..\TOP-Records\TOP-Records\TOP-Records.csproj", "{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libary", "Libary", "{BA0787F5-C83C-47DF-A6E2-2852B51DE425}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{075A7CAE-CB13-4061-89E7-A7792CA39AA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{075A7CAE-CB13-4061-89E7-A7792CA39AA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{075A7CAE-CB13-4061-89E7-A7792CA39AA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{075A7CAE-CB13-4061-89E7-A7792CA39AA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A} = {BA0787F5-C83C-47DF-A6E2-2852B51DE425}
 	EndGlobalSection
 EndGlobal
