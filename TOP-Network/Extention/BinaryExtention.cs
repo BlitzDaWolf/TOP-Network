@@ -7,8 +7,8 @@ namespace TOP_Network.Extention
     {
         public static object ReadType(this BinaryReader reader, Type type)
         {
-            if (type == typeof(string)) return reader.ReadString((int)reader.ReadType(typeof(short)));
-            if(type == typeof(byte[])) return reader.ReadBytes((int)reader.ReadType(typeof(short)));
+            if (type == typeof(string))return reader.ReadString((short)reader.ReadType(typeof(short)));
+            if(type == typeof(byte[])) return reader.ReadBytes((short)reader.ReadType(typeof(short)));
 
             // byte
             if (type == typeof(byte)) return (reader.ReadByte());
