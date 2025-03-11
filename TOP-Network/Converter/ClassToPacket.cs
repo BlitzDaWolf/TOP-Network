@@ -1,7 +1,10 @@
 ﻿using System.Reflection;
+using System.Reflection.PortableExecutable;
+using TOP_Network.Attributes;
 using TOP_Network.Enum;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
+using TOP_Records;
 using TOP_Records.Tables;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -31,15 +34,28 @@ namespace TOP_Network.Converter
             return packet;
         }
 
-        private static void WriteData(this BinaryWriter writer, object type, Dictionary<PropertyInfo, object> values)
+        private static void WriteData(this BinaryWriter writer, object entity, Dictionary<PropertyInfo, object> values)
         {
             Dictionary<PropertyInfo, object> test = new Dictionary<PropertyInfo, object>(values);
-            var properties = type.GetType().GetProperties();
+            var properties = entity.GetType().GetProperties();
 
             foreach (var item in properties)
             {
+                ValidRecordAttribute? valid = item.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
+                if (valid != null)
+                {
+                    if (item.PropertyType != typeof(int)) throw new Exception($"Invalid type `{item.PropertyType}`");
+
+                    var id = (int)item.GetValue(entity);
+                    if (RecorReaders.GetRecord(valid.RecoredTable, id) == null)
+                    {
+                        return;
+                    }
+                    continue;
+                }
+
                 if (test.ContainsKey(item)) continue;
-                test.Add(item, item.GetValue(type)!);
+                test.Add(item, item.GetValue(entity)!);
                 if (item.PropertyType.IsArray)
                 {
                     writer.WriteArry(item, test);

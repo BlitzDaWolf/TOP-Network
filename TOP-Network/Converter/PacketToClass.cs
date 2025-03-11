@@ -1,7 +1,10 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+using TOP_Network.Attributes;
 using TOP_Network.Enum;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
+using TOP_Records;
 using TOP_Records.Tables;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -27,6 +30,20 @@ namespace TOP_Network.Converter
 
             foreach (var item in properties)
             {
+                ValidRecordAttribute? valid = item.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
+                if (valid != null)
+                {
+                    if (item.PropertyType != typeof(int)) throw new Exception($"Invalid type `{item.PropertyType}`");
+
+                    var id = (int)reader.ReadType(typeof(int));
+                    item.SetValue(entity, id);
+                    if(RecorReaders.GetRecord(valid.RecoredTable, id) == null)
+                    {
+                        return entity;
+                    }
+                    continue;
+                }
+
                 if (item.PropertyType.IsArray)
                 {
                     if (test.ContainsKey(item)) continue;
