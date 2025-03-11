@@ -6,7 +6,7 @@ var v = File.ReadAllBytes(@"D:\dev\Decrypt\Decrypt\bin\Debug\net8.0\Packets\serv
 
 var pkt = new Packet(v);
 var log = pkt.Convert<Login>();
-var r = log.Convert();
+var r = log.Convert(pkt.Command);
 
 r.DisplayHex();
 

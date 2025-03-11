@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using TOP_Network.Enum;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records.Tables;
@@ -8,7 +9,7 @@ namespace TOP_Network.Converter
 {
     public static class ClassToPacket
     {
-        public static Packet Convert(this object entity)
+        public static Packet Convert(this object entity, Commands command)
         {
             Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
 
@@ -19,7 +20,7 @@ namespace TOP_Network.Converter
 
             writer.WriteType(50);
             writer.WriteType(-2147483648);
-            writer.WriteType((short)0);
+            writer.WriteType((short)command);
 
             writer.WriteData(entity, values);
 

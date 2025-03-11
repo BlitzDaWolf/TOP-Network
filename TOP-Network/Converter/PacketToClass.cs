@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using TOP_Network.Enum;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records.Tables;
@@ -13,6 +14,7 @@ namespace TOP_Network.Converter
             Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
 
             using var reader = packet.GetBitReader();
+            var command = (Commands)(short)reader.ReadType(typeof(short));
 
             return (T)reader.Read(typeof(T), values);
         }
