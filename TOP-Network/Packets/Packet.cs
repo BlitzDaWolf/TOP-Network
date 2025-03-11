@@ -31,5 +31,10 @@ namespace TOP_Network.Packets
         {
             return new Packet(Data.Take(Size).ToArray());
         }
+
+        public void DisplayHex()
+        {
+            Console.WriteLine($"{BitConverter.ToString(Data.Take(Size).ToArray()).Replace("-", "")}");
+        }
     }
 }

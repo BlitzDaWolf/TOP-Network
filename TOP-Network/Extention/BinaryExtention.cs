@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Reflection.PortableExecutable;
 using TOP_Records;
 
 namespace TOP_Network.Extention
@@ -28,7 +29,8 @@ namespace TOP_Network.Extention
 
             // Long
             if (type == typeof(long)) return BinaryPrimitives.ReadInt64BigEndian(reader.ReadBytes(8));
-            if(type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(reader.ReadBytes(8));
+            if (type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(reader.ReadBytes(8));
+            if (type == typeof(bool)) return reader.ReadBoolean();
 
             throw new Exception($"The type ({type}) has not been implemented");
         }
@@ -36,6 +38,8 @@ namespace TOP_Network.Extention
 
         public static void WriteType(this BinaryWriter writer, object value)
         {
+            var start = writer.BaseStream.Position;
+
             var type = value.GetType();
             if (type == typeof(string))
             {
@@ -68,6 +72,9 @@ namespace TOP_Network.Extention
             // Long
             if (type == typeof(long)) writer.WriteBytes(BitConverter.GetBytes((long)value));
             if (type == typeof(ulong)) writer.WriteBytes(BitConverter.GetBytes((ulong)value));
+            if (type == typeof(bool)) writer.Write((bool)value);
+
+            if (writer.BaseStream.Position == start) throw new Exception($"The type ({type}) has not been implemented");
         }
 
         public static void WriteBytes(this BinaryWriter writer, byte[] data)
