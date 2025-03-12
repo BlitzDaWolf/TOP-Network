@@ -1,7 +1,7 @@
 ﻿using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 
-namespace NetworkTest
+namespace NetworkTest.Extentions
 {
     public class WriterTests
     {
@@ -9,13 +9,19 @@ namespace NetworkTest
 
         public BinaryWriter CreateWriter(byte[] Data)
         {
+            /*if(!Directory.Exists("test"))
+                Directory.CreateDirectory("test");
+            var name = $"t-{DateTime.Now.Ticks}.tst";
+            if(!File.Exists(@$"test\{name}"))
+                File.Create($@"test\{name}").Close();
+            var stream = File.OpenWrite(@$"test\{name}");*/
             var stream = new MemoryStream(Data, true);
             return new BinaryWriter(stream);
         }
 
         public byte[] RandomType<T>()
         {
-            byte[] res = Enumerable.Range(0,typeof(T).SizeOf()).Select(x => (byte)Random.Shared.Next(0, 255)).ToArray();
+            byte[] res = Enumerable.Range(0, typeof(T).SizeOf()).Select(x => (byte)Random.Shared.Next(0, 255)).ToArray();
             return res;
         }
 
@@ -108,7 +114,7 @@ namespace NetworkTest
         {
             for (int i = 0; i < TestAmount; i++)
             {
-                sbyte target = (sbyte)(byte)Random.Shared.Next(0,255);
+                sbyte target = (sbyte)(byte)Random.Shared.Next(0, 255);
                 byte[] Data = new byte[1];
                 using var writer = CreateWriter(Data);
 
@@ -122,7 +128,7 @@ namespace NetworkTest
         {
             for (int i = 0; i < TestAmount; i++)
             {
-                byte target = (byte)Random.Shared.Next(0,255);
+                byte target = (byte)Random.Shared.Next(0, 255);
                 byte[] Data = new byte[1];
                 using var writer = CreateWriter(Data);
 
