@@ -2,6 +2,7 @@
 using System.Reflection.PortableExecutable;
 using TOP_Network.Attributes;
 using TOP_Network.Enum;
+using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
@@ -41,20 +42,20 @@ namespace TOP_Network.Converter
 
             foreach (var item in properties)
             {
+                if (test.ContainsKey(item)) continue;
+                test.Add(item, item.GetValue(entity)!);
                 if (item.GetCustomAttribute<ValidRecordAttribute>() is ValidRecordAttribute valid)
                 {
-                    if (item.PropertyType != typeof(int)) throw new Exception($"Invalid type `{item.PropertyType}`");
+                    if (item.PropertyType != typeof(int)) throw new WrongTypeExcetion($"Invalid type `{item.PropertyType}`");
 
                     var id = (int)item.GetValue(entity)!;
                     if (RecorReaders.GetRecord(valid.RecoredTable, id) == null)
                     {
+                        writer.WriteSingle(item, test);
                         return;
                     }
-                    continue;
                 }
 
-                if (test.ContainsKey(item)) continue;
-                test.Add(item, item.GetValue(entity)!);
                 if (item.PropertyType.IsArray)
                 {
                     writer.WriteArry(item, test);
@@ -72,6 +73,10 @@ namespace TOP_Network.Converter
             {
                 writer.WriteType(values[info]);
             }
+            catch (WrongTypeExcetion e)
+            {
+                throw e;
+            }
             catch
             {
                 writer.WriteData(values[info], values);
@@ -83,6 +88,10 @@ namespace TOP_Network.Converter
             try
             {
                 writer.WriteType(values[info]);
+            }
+            catch (WrongTypeExcetion e)
+            {
+                throw e;
             }
             catch
             {
