@@ -14,9 +14,9 @@ namespace TOP_Network.Converter
     {
         public static Packet Convert(this object entity, Commands command)
         {
-            Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
+            Dictionary<PropertyInfo, object> values = [];
 
-            Packet packet = new Packet();
+            Packet packet = new();
             packet.Init(new byte[4096]);
             using BinaryWriter writer = packet.GetBitWriter();
             writer.BaseStream.Position = 0;
@@ -36,17 +36,16 @@ namespace TOP_Network.Converter
 
         private static void WriteData(this BinaryWriter writer, object entity, Dictionary<PropertyInfo, object> values)
         {
-            Dictionary<PropertyInfo, object> test = new Dictionary<PropertyInfo, object>(values);
+            Dictionary<PropertyInfo, object> test = new(values);
             var properties = entity.GetType().GetProperties();
 
             foreach (var item in properties)
             {
-                ValidRecordAttribute? valid = item.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
-                if (valid != null)
+                if (item.GetCustomAttribute<ValidRecordAttribute>() is ValidRecordAttribute valid)
                 {
                     if (item.PropertyType != typeof(int)) throw new Exception($"Invalid type `{item.PropertyType}`");
 
-                    var id = (int)item.GetValue(entity);
+                    var id = (int)item.GetValue(entity)!;
                     if (RecorReaders.GetRecord(valid.RecoredTable, id) == null)
                     {
                         return;

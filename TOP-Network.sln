@@ -5,11 +5,13 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Network", "TOP-Network\TOP-Network.csproj", "{075A7CAE-CB13-4061-89E7-A7792CA39AA9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Records", ".\TOP-Records\TOP-Records\TOP-Records.csproj", "{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Records", "TOP-Records\TOP-Records\TOP-Records.csproj", "{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libary", "Libary", "{BA0787F5-C83C-47DF-A6E2-2852B51DE425}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{CC34601E-5EB4-43F7-BB15-CCE9EBA76652}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Packets", "TOP-Packets\TOP-Packets.csproj", "{18D8BD92-3A45-467A-8590-F09C621A7946}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkTest", "NetworkTest\NetworkTest.csproj", "{2794E830-7BA7-4DC2-BAAA-83793D4B0822}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,15 +27,22 @@ Global
 		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CC34601E-5EB4-43F7-BB15-CCE9EBA76652}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CC34601E-5EB4-43F7-BB15-CCE9EBA76652}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CC34601E-5EB4-43F7-BB15-CCE9EBA76652}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CC34601E-5EB4-43F7-BB15-CCE9EBA76652}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18D8BD92-3A45-467A-8590-F09C621A7946}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18D8BD92-3A45-467A-8590-F09C621A7946}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18D8BD92-3A45-467A-8590-F09C621A7946}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18D8BD92-3A45-467A-8590-F09C621A7946}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2794E830-7BA7-4DC2-BAAA-83793D4B0822}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2794E830-7BA7-4DC2-BAAA-83793D4B0822}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2794E830-7BA7-4DC2-BAAA-83793D4B0822}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2794E830-7BA7-4DC2-BAAA-83793D4B0822}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E4E435CC-2CFF-4B9C-B70A-D10640B0329A} = {BA0787F5-C83C-47DF-A6E2-2852B51DE425}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8D41D4F9-A7CC-4C62-94F3-BCA81DC14E92}
 	EndGlobalSection
 EndGlobal

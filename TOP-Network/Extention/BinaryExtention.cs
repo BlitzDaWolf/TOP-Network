@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Reflection.PortableExecutable;
+using TOP_Network.Exceptions;
 using TOP_Records;
 
 namespace TOP_Network.Extention
@@ -32,7 +33,7 @@ namespace TOP_Network.Extention
             if (type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(reader.ReadBytes(8));
             if (type == typeof(bool)) return reader.ReadBoolean();
 
-            throw new Exception($"The type ({type}) has not been implemented");
+            throw new BinaryException(type);
         }
 
 
@@ -52,6 +53,8 @@ namespace TOP_Network.Extention
                 writer.WriteType((short)str.Length);
                 writer.Write(str);
             }
+
+            if(type == typeof(DateTime)) WriteType(writer, ((DateTime)value).Ticks);
 
             // byte
             if (type == typeof(byte)) writer.Write((byte)value);
@@ -74,7 +77,7 @@ namespace TOP_Network.Extention
             if (type == typeof(ulong)) writer.WriteBytes(BitConverter.GetBytes((ulong)value));
             if (type == typeof(bool)) writer.Write((bool)value);
 
-            if (writer.BaseStream.Position == start) throw new Exception($"The type ({type}) has not been implemented");
+            if (writer.BaseStream.Position == start) throw new BinaryException(type);
         }
 
         public static void WriteBytes(this BinaryWriter writer, byte[] data)
