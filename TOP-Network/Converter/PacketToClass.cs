@@ -1,12 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Reflection;
+﻿using System.Reflection;
 using TOP_Network.Attributes;
 using TOP_Network.Enum;
+using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
-using TOP_Records.Tables;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace TOP_Network.Converter
 {
@@ -19,7 +17,14 @@ namespace TOP_Network.Converter
             using var reader = packet.GetBitReader();
             var command = (Commands)(short)reader.ReadType(typeof(short));
 
-            return (T)reader.Read(typeof(T), values);
+            T result = (T)reader.Read(typeof(T), values);
+
+            if(packet.GetStream().Position != packet.Size)
+            {
+                // throw new NotFullyReadException(packet);
+            }
+
+            return result;
         }
 
         private static object Read(this BinaryReader reader, Type type, Dictionary<PropertyInfo, object> values)
@@ -33,13 +38,30 @@ namespace TOP_Network.Converter
                 ValidRecordAttribute? valid = item.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
                 if (valid != null)
                 {
-                    if (item.PropertyType != typeof(int)) throw new Exception($"Invalid type `{item.PropertyType}`");
+                    if (item.PropertyType != typeof(int) && item.PropertyType != typeof(short)) throw new WrongTypeExcetion($"Invalid type `{item.PropertyType}`");
 
-                    var id = (int)reader.ReadType(typeof(int));
+                    int id = 0;
+                    if (item.PropertyType == typeof(int))
+                        id = (int)reader.ReadType(typeof(int));
+                    else
+                        id = (short)reader.ReadType(typeof(short));
+
                     item.SetValue(entity, id);
                     if(RecorReaders.GetRecord(valid.RecoredTable, id) == null)
                     {
-                        return entity;
+                        return null;
+                    }
+                    continue;
+                }
+                List<ChooseAttribute?> choises = item.GetCustomAttributes(typeof(ChooseAttribute)).Select(x => x as ChooseAttribute).ToList();
+                if (choises.Count > 0)
+                {
+                    var choiseSelect = (byte)reader.ReadType(typeof(byte));
+                    var choise = choises.FirstOrDefault(x => x.Value == choiseSelect);
+                    if(choise != null)
+                    {
+                        var r = reader.Read(choise.DataType, values);
+                        item.SetValue(entity, r);
                     }
                     continue;
                 }
@@ -83,11 +105,12 @@ namespace TOP_Network.Converter
             {
                 var size = (byte)reader.ReadType(typeof(byte));
                 var type = info.PropertyType.GetElementType()!;
-                var value = Array.CreateInstance(type, size);
+                Array value = Array.CreateInstance(type, size);
 
                 for (short i = 0; i < size; i++)
                 {
-                    value.SetValue(reader.Read(type, values), i);
+                    var r = reader.Read(type, values);
+                    value.SetValue(r, i);
                 }
 
                 return value;

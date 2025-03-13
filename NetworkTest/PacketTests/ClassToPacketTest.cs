@@ -1,15 +1,11 @@
 ﻿using NetworkTest.TestClasses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using TOP_Network.Attributes;
 using TOP_Network.Converter;
 using TOP_Network.Exceptions;
 using TOP_Records;
 
-namespace NetworkTest.Packet
+namespace NetworkTest.PacketTests
 {
     struct test
     {
@@ -24,28 +20,37 @@ namespace NetworkTest.Packet
 
     public class ClassToPacketTest
     {
+        public Address Addres { get; set; }
+        public Painters Painters { get; set; }
+
         public ClassToPacketTest()
         {
             CentryTable table = new CentryTable();
             table.Data.Add(new Centry { Exist = 1, Index = 1, Value = 16 });
             table.Data.Add(new Centry { Exist = 1, Index = 2, Value = 18 });
-
             RecorReaders.Readers.Add(table);
+
+
+            Addres = new Address { City = "Antwerp", Code = [(byte)'B', (byte)'E'], Country = "Belgium", PostalCode = 2000 };
+
+            Person Dyck = new Person { addres = Addres, Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
+            Person Elder = new Person { addres = Addres, Name = "The Elder", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 2 };
+            Person Younger = new Person { addres = Addres, Name = "Younger", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 3 };
+
+            Painters = new Painters { People = [Dyck, Elder, Younger] };
         }
 
         [Fact]
         public void Fact_Address()
         {
-            Address TestAddress = new Address { City = "Antwerp", Code = [(byte)'B', (byte)'E'], Country = "Belgium", PostalCode = 2000 };
-            var pkt = TestAddress.Convert(0).Clone();
+            var pkt = Addres.Convert(0).Clone();
             Assert.Equal(36, pkt.Size);
         }
 
         [Fact]
         public void Fact_Person()
         {
-            Address TestAddress = new Address { City = "Antwerp", Code = [(byte)'B', (byte)'E'], Country = "Belgium", PostalCode = 2000 };
-            Person Dyck = new Person { addres = TestAddress,    Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
+            Person Dyck = Painters.People[0];
             var pkt = Dyck.Convert(0).Clone();
             Assert.Equal(62, pkt.Size);
         }
@@ -53,12 +58,8 @@ namespace NetworkTest.Packet
         [Fact]
         public void Fact_Painters()
         {
-            Address TestAddress = new Address { City = "Antwerp", Code = [(byte)'B', (byte)'E'], Country = "Belgium", PostalCode = 2000 };
-            Person Dyck = new Person { addres = TestAddress, Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
-            Person Elder = new Person { addres = TestAddress, Name = "The Elder", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 2 };
-            Person Younger = new Person { addres = TestAddress, Name = "Younger", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 3 };
 
-            Painters painters = new Painters { People = [Dyck, Elder, Younger] };
+            Painters painters = Painters;
             var pkt = painters.Convert(0).Clone();
             var t = pkt.DisplayHex();
             Assert.Equal(120, pkt.Size);

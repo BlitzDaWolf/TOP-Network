@@ -27,19 +27,26 @@ namespace TOP_Network.Extention
             if (type == typeof(ushort)) return BinaryPrimitives.ReadUInt16BigEndian(reader.ReadBytes(byteLength));
 
             // Int
-            if (type == typeof(int)) return BinaryPrimitives.ReadInt32BigEndian(reader.ReadBytes(byteLength));
-            if (type == typeof(uint)) return BinaryPrimitives.ReadUInt32BigEndian(reader.ReadBytes(byteLength));
+            if (type == typeof(int)) return reader.ReadInt();
+            if (type == typeof(uint)) return reader.ReadUInt();
 
             
             if (type == typeof(float)) return BinaryPrimitives.ReadSingleBigEndian(reader.ReadBytes(byteLength)); // float
             if (type == typeof(double)) return BinaryPrimitives.ReadDoubleBigEndian(reader.ReadBytes(byteLength)); // double
 
             // Long
-            if (type == typeof(long)) return BinaryPrimitives.ReadInt64BigEndian(reader.ReadBytes(byteLength));
-            if (type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(reader.ReadBytes(byteLength));
+            if (type == typeof(long)) return reader.ReadLong();
+            if (type == typeof(ulong)) return reader.ReadULong();
 
             throw new BinaryException(type);
         }
+
+        #region
+        private static int ReadInt(this BinaryReader reader) => BinaryPrimitives.ReadInt32BigEndian(reader.ReadBytes(sizeof(int)));
+        private static uint ReadUInt(this BinaryReader reader) => BinaryPrimitives.ReadUInt32BigEndian(reader.ReadBytes(sizeof(uint)));
+        private static long ReadLong(this BinaryReader reader) => BinaryPrimitives.ReadInt64BigEndian(reader.ReadBytes(sizeof(long)));
+        private static ulong ReadULong(this BinaryReader reader) => BinaryPrimitives.ReadUInt64BigEndian(reader.ReadBytes(sizeof(ulong)));
+        #endregion
 
 
         public static void WriteType(this BinaryWriter writer, object value)

@@ -4,11 +4,6 @@ namespace TOP_Network.Extention
 {
     public static class TypeExtention
     {
-        public static int SizeOf<T>()
-        {
-            return SizeOf(typeof(T));
-        }
-
         public static int SizeOf(this Type type)
         {
             var dynamicMethod = new DynamicMethod("SizeOf", typeof(int), Type.EmptyTypes);

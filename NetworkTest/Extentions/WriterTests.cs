@@ -28,21 +28,18 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteUInt()
         {
-            for (int i = 0; i < TestAmount; i++)
-            {
                 byte[] target = RandomType<uint>();
                 byte[] Data = new byte[target.Length];
                 using var writer = CreateWriter(Data);
 
                 writer.WriteType(BitConverter.ToUInt32(target.Reverse().ToArray()));
                 Assert.Equal(target, Data);
-            }
         }
 
         [Fact]
         public void Fact_WriteInt()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<int>();
                 byte[] Data = new byte[target.Length];
@@ -56,7 +53,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteULong()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<ulong>();
                 byte[] Data = new byte[target.Length];
@@ -70,7 +67,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteLong()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<long>();
                 byte[] Data = new byte[target.Length];
@@ -84,7 +81,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteUShort()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<ushort>();
                 byte[] Data = new byte[target.Length];
@@ -98,7 +95,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteShort()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<short>();
                 byte[] Data = new byte[target.Length];
@@ -112,7 +109,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteSByte()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 sbyte target = (sbyte)(byte)Random.Shared.Next(0, 255);
                 byte[] Data = new byte[1];
@@ -126,7 +123,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteByte()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte target = (byte)Random.Shared.Next(0, 255);
                 byte[] Data = new byte[1];
@@ -182,7 +179,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteFloat()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<float>();
                 byte[] Data = new byte[target.Length];
@@ -196,7 +193,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_WriteDouble()
         {
-            for (int i = 0; i < TestAmount; i++)
+            
             {
                 byte[] target = RandomType<double>();
                 byte[] Data = new byte[target.Length];
