@@ -5,6 +5,7 @@ using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
+using TOP_Records.Tables;
 
 namespace TOP_Network.Converter
 {
@@ -21,6 +22,7 @@ namespace TOP_Network.Converter
 
             if(packet.GetStream().Position != packet.Size)
             {
+                var missed = packet.Size - packet.GetStream().Position;
                 // throw new NotFullyReadException(packet);
             }
 
@@ -87,7 +89,7 @@ namespace TOP_Network.Converter
         {
             try
             {
-                return reader.ReadType(info.PropertyType);
+                return reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
             }
             catch
             {
