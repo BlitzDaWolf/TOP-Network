@@ -1,32 +1,86 @@
 ﻿using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
 using TOP_Network.Attributes;
 using TOP_Network.Enum;
 using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
-using TOP_Records.Tables;
 
 namespace TOP_Network.Converter
 {
     public static class PacketToClass
     {
+        private static Dictionary<Commands, Type> keyValuePairs = new Dictionary<Commands, Type>();
+
+        public static void AddType<T>(Commands command)
+        {
+            AddType(typeof(T), command);
+        }
+        public static void AddType(Type type, Commands command)
+        {
+            keyValuePairs.Add(command, type);
+        }
+
         public static T Convert<T>(this Packet packet)
         {
             Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
 
             using var reader = packet.GetBitReader();
+            reader.ReadType(typeof(int));
+            reader.ReadType(typeof(int));
+
+            var command = (Commands)(short)reader.ReadType(typeof(short));
+            T result;
+            try
+            {
+                result = (T)reader.Read(typeof(T), values);
+                if (packet.GetStream().Position != packet.Size)
+                {
+                    var h = packet.DisplayHex();
+                    var missed = packet.Size - packet.GetStream().Position;
+                    throw new NotFullyReadException(result);
+                }
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(packet.DisplayHex());
+                throw e;
+            }
+        }
+
+        public static object? Convert(this Packet packet)
+        {
+            Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
+
+            using var reader = packet.GetBitReader();
+            reader.ReadType(typeof(int));
+            reader.ReadType(typeof(int));
+
             var command = (Commands)(short)reader.ReadType(typeof(short));
 
-            T result = (T)reader.Read(typeof(T), values);
-
-            if(packet.GetStream().Position != packet.Size)
+            try
             {
-                var missed = packet.Size - packet.GetStream().Position;
-                // throw new NotFullyReadException(packet);
-            }
+                if (!keyValuePairs.ContainsKey(command))
+                {
+                    throw new Exception($"Command [{command}] was not found");
+                }
+                var result = reader.Read(keyValuePairs[command], values);
+                if (reader.BaseStream.Position != packet.Size)
+                {
+                    var h = packet.DisplayHex();
+                    var missed = packet.Size - reader.BaseStream.Position;
+                    throw new NotFullyReadException(result);
+                }
 
-            return result;
+                return result;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
         private static object Read(this BinaryReader reader, Type type, Dictionary<PropertyInfo, object> values)
@@ -67,6 +121,32 @@ namespace TOP_Network.Converter
                     }
                     continue;
                 }
+                List<IfAttribute?> ifs = item.GetCustomAttributes(typeof(IfAttribute)).Select(x => x as IfAttribute).ToList();
+                if(ifs.Count > 0)
+                {
+                    var vals = ifs.FirstOrDefault(x => x.A(test.FirstOrDefault(y => y.Key.Name == x.v1).Value));
+                    if(vals != null)
+                    {
+                        if (item.PropertyType.IsArray)
+                        {
+                            if (test.ContainsKey(item)) continue;
+                            test.Add(item, reader.ReadArry(item, test));
+                            item.SetValue(entity, test[item]);
+                        }
+                        else
+                        {
+                            if (test.ContainsKey(item)) continue;
+                            test.Add(item, reader.ReadSingle(item, test));
+                            item.SetValue(entity, test[item]);
+                        }
+                        if (item.GetCustomAttribute<EndIfAttribute>() != null)
+                            return entity;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
 
                 if (item.PropertyType.IsArray)
                 {
@@ -87,36 +167,55 @@ namespace TOP_Network.Converter
 
         public static object ReadSingle(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
-            try
+            var res = reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+            if (res == null)
             {
-                return reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+                res = reader.Read(info.PropertyType, values);
             }
-            catch
+            return res;
+        }
+
+        public static int convertToInt(object source)
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            using var ms = new MemoryStream();
+            bf.Serialize(ms, source);
+            var test = ms.ToArray();
+            byte[] target = new byte[4];
+            for (int i = 0; i < Math.Min(target.Length, test.Length); i++)
             {
-                return reader.Read(info.PropertyType, values);
+                target[i] = test[i];
             }
+            return BitConverter.ToInt32(target);
         }
 
         public static object ReadArry(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
-            try
-            {
-                return reader.ReadType(info.PropertyType);
-            }
-            catch
-            {
-                var size = (byte)reader.ReadType(typeof(byte));
-                var type = info.PropertyType.GetElementType()!;
-                Array value = Array.CreateInstance(type, size);
-
-                for (short i = 0; i < size; i++)
+                var res = reader.ReadType(info.PropertyType);
+                if (res == null)
                 {
-                    var r = reader.Read(type, values);
-                    value.SetValue(r, i);
-                }
+                    int size = 0;
+                    ArraySizeAttribute? t = info.GetCustomAttribute<ArraySizeAttribute>() as ArraySizeAttribute;
+                    if (t != null)
+                    {
+                        size = reader.ReadType(t.ReadType).GetHashCode();
+                    }
+                    else
+                    {
+                        size = (byte)reader.ReadType(typeof(byte));
+                    }
+                    var type = info.PropertyType.GetElementType()!;
+                    Array value = Array.CreateInstance(type, size);
 
-                return value;
-            }
+                    for (short i = 0; i < size; i++)
+                    {
+                        var r = reader.Read(type, values);
+                        value.SetValue(r, i);
+                    }
+
+                    return value;
+                }
+                return res;
         }
     }
 }

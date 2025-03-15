@@ -14,7 +14,7 @@ namespace TOP_Network.Extention
             if (type == typeof(string))return reader.ReadString((short)reader.ReadType(typeof(short)));
             if(type == typeof(byte[])) return reader.ReadBytes((short)reader.ReadType(typeof(short)));
             if (type == typeof(DateTime)) return new DateTime(reader.ReadType<long>());
-            if (type == typeof(bool)) return reader.ReadBoolean();
+            if (type == typeof(bool)) return reader.ReadByte() == 1;
 
             // byte
             if (type == typeof(byte)) return (reader.ReadByte());
@@ -38,7 +38,8 @@ namespace TOP_Network.Extention
             if (type == typeof(long)) return BinaryPrimitives.ReadInt64BigEndian(reader.ReadBytes(byteLength, small));
             if (type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(reader.ReadBytes(byteLength, small));
 
-            throw new BinaryException(type);
+            return null;
+            // throw new BinaryException(type);
         }
 
 

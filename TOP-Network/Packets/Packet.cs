@@ -20,11 +20,11 @@ namespace TOP_Network.Packets
             if (data.Length < 10) throw new Exception("Not enough data to be a valid packet");
             Data = data;
             _stream = new MemoryStream(Data, true);
-            _stream.Position = 8;
+            _stream.Position = 0;
         }
 
         public Stream GetStream() => _stream ?? throw new Exception("The packet has not been initialized");
-        public BinaryReader GetBitReader() => new BinaryReader(GetStream());
+        public BinaryReader GetBitReader() => new PacketReader(GetStream());
         public BinaryWriter GetBitWriter() => new BinaryWriter(GetStream());
 
         public Packet Clone()

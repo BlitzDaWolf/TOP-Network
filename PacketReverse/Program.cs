@@ -1,35 +1,146 @@
-﻿using System.Net.Sockets;
+﻿using System.ComponentModel;
+using System.IO;
+using System.Net.Sockets;
+using System.Reflection;
 using TOP_Network.Converter;
+using TOP_Network.Enum;
+using TOP_Network.Exceptions;
 using TOP_Network.Packets;
 using TOP_Packets.Server;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        // CMD_MC_FUNCPAGE
-        var missions = Directory.GetFiles(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets\CMD_MC_MISLOG")
-            .Select(File.ReadAllBytes)
-            .Select(x => new Packet(x))
-            .Select(x => x.Convert<MissionLog>())
-            .ToList();
+        PacketToClass.AddType<MissionLog>(Commands.CMD_MC_MISLOG);
+        PacketToClass.AddType<MissionPage>(Commands.CMD_MC_MISPAGE);
+        PacketToClass.AddType<MissionLogInfo>(Commands.CMD_MC_MISLOGINFO);
+        PacketToClass.AddType<NpcStateChange>(Commands.CMD_MC_NPCSTATECHG);
+        PacketToClass.AddType<FuncPage>(Commands.CMD_MC_FUNCPAGE);
+        PacketToClass.AddType<SystemInformation>(Commands.CMD_MC_SYSINFO);
+        PacketToClass.AddType<Notification>(Commands.CMD_MC_NOTIACTION);
+        PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
 
-        var missionPage = Directory.GetFiles(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets\CMD_MC_MISPAGE")
-            .Select(File.ReadAllBytes)
-            .Select(x => new Packet(x))
-            .Select(x => x.Convert<MissionPage>())
-            .ToList();
-        var missionLogInfo = Directory.GetFiles(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets\CMD_MC_MISLOGINFO")
-            .Select(File.ReadAllBytes)
-            .Select(x => new Packet(x))
-            .Select(x => x.Convert<MissionLogInfo>())
-            .ToList();
+        var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets").SelectMany(Directory.GetFiles).ToList();
 
-        var NpcStateChange = Directory.GetFiles(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets\CMD_MC_NPCSTATECHG")
-            .Select(File.ReadAllBytes)
-            .Select(x => new Packet(x))
-            .Select(x => x.Convert<NpcStateChange>())
-            .ToList();
+        int totalSize = files.Count;
+        int invalid = 0;
+        int notRead = 0;
 
+        while (files.Count > 0)
+        {
+
+            Console.Title = $"[{invalid}/{notRead}/{totalSize}]";
+            try
+            {
+                var pkt = new Packet(File.ReadAllBytes(files[0]));
+                var r = pkt.Convert();
+                // await Task.Delay(10);
+            }
+            catch(NotFullyReadException e)
+            {
+                notRead++;
+            }
+            catch(Exception e)
+            {
+                if (e.Message.Contains("CMD_MC"))
+                {
+
+                }
+                //Console.WriteLine(e.Message);
+                invalid++;
+            }
+            // Console.WriteLine($"[{invalid}/{files.Count}/{totalSize}]");
+            files.RemoveAt(0);
+        }
+        Console.WriteLine($"[{invalid}/{notRead}/{totalSize}]");
+    }
+
+    static void t()
+    {
+        var t = Assembly.GetAssembly(typeof(FuncPage)).GetTypes();
+
+        var basePath = @"D:\dev\PKO-Wiki\Network\Packets";
+
+        List<string> shared = new List<string>();
+
+        foreach (var item in t.Where(x => x.IsAbstract).ToList())
+        {
+            List<string> data = new List<string>();
+
+
+            data.Add($"# {item.Name}");
+            data.Add("");
+
+            foreach (var imp in t.Where(x => x.BaseType == item))
+            {
+                data.Add($"## {imp.Name}");
+                data.Add("");
+
+                var properties = imp.GetProperties();
+                data.Add($"|Name|Type|Description|");
+                data.Add($"|---|---|---|");
+                foreach (var p in properties)
+                {
+                    var v = p.GetCustomAttribute<DescriptionAttribute>();
+                    string dsc = v != null ? $"{v.Description}" : "";
+                    if (p.PropertyType.Namespace.Contains("System"))
+                    {
+                        data.Add($"|{p.Name}|{p.PropertyType.Name}|{dsc}|");
+                    }
+                    else
+                    {
+                        data.Add($"|{p.Name}|[{p.PropertyType.Name}](./{p.PropertyType.Name}.md)|{dsc}|");
+                    }
+                }
+                data.Add("");
+                data.Add("");
+            }
+
+            var pth = Path.Combine(basePath, "shared", item.Name + ".md");
+            File.WriteAllLines(pth, data);
+        }
+
+        foreach (var item in t.Where(x => !x.IsAbstract).ToList())
+        {
+            if (item.BaseType == typeof(object))
+            {
+                List<string> data = new List<string>();
+
+                data.Add($"# {item.Name}");
+                data.Add("");
+
+                var properties = item.GetProperties();
+                data.Add($"|Name|Type|Description|");
+                data.Add($"|---|---|---|");
+                foreach (var p in properties)
+                {
+                    var v = p.GetCustomAttribute<DescriptionAttribute>();
+                    string dsc = v != null ? $"{v.Description}" : "";
+                    if (p.PropertyType.Namespace.Contains("System"))
+                    {
+                        data.Add($"|{p.Name}|{p.PropertyType.Name}|{dsc}|");
+                    }
+                    else
+                    {
+                        if (p.PropertyType.IsAbstract)
+                        {
+                            data.Add($"|{p.Name}|[{p.PropertyType.Name}](../shared/{p.PropertyType.Name.Replace("[]", "")}.md)|{dsc}|");
+                        }
+                        else
+                        {
+                            data.Add($"|{p.Name}|[{p.PropertyType.Name}](./{p.PropertyType.Name.Replace("[]", "")}.md)|{dsc}|");
+                        }
+                    }
+                }
+
+                var pth = Path.Combine(basePath, "all", item.Name + ".md");
+                File.WriteAllLines(pth, data);
+            }
+            else
+            {
+
+            }
+        }
     }
 }

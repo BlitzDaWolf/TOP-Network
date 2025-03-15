@@ -9,11 +9,11 @@ namespace TOP_Network.Exceptions
 {
     public class NotFullyReadException : Exception
     {
-        public NotFullyReadException(Packet packet)
+        public NotFullyReadException(object packet)
         {
             Packet = packet;
         }
 
-        public Packet Packet { get; }
+        public object Packet { get; }
     }
 }
