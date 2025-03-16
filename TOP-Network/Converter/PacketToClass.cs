@@ -6,9 +6,18 @@ using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
+using static System.Net.Mime.MediaTypeNames;
+using TOP_Records.Tables;
+using System.Xml;
 
 namespace TOP_Network.Converter
 {
+    class PacketReadS
+    {
+        public BinaryReader Reader { get; set; }
+        public Dictionary<PropertyInfo, object> Values { get; set; }
+    }
+
     public static class PacketToClass
     {
         private static Dictionary<Commands, Type> keyValuePairs = new Dictionary<Commands, Type>();
@@ -72,6 +81,9 @@ namespace TOP_Network.Converter
                 {
                     var h = packet.DisplayHex();
                     var missed = packet.Size - reader.BaseStream.Position;
+
+                    reader.ReadBytes((int)missed);
+
                     throw new NotFullyReadException(result);
                 }
 
@@ -83,7 +95,7 @@ namespace TOP_Network.Converter
             }
         }
 
-        private static object Read(this BinaryReader reader, Type type, Dictionary<PropertyInfo, object> values)
+        public static object Read(this BinaryReader reader, Type type, Dictionary<PropertyInfo, object> values)
         {
             Dictionary<PropertyInfo, object> test = new Dictionary<PropertyInfo, object>(values);
             var entity = Activator.CreateInstance(type)!;
@@ -91,91 +103,111 @@ namespace TOP_Network.Converter
 
             foreach (var item in properties)
             {
-                ValidRecordAttribute? valid = item.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
-                if (valid != null)
+                if (!reader.ReadValid(item, entity))
                 {
-                    if (item.PropertyType != typeof(int) && item.PropertyType != typeof(short)) throw new WrongTypeExcetion($"Invalid type `{item.PropertyType}`");
-
-                    int id = 0;
-                    if (item.PropertyType == typeof(int))
-                        id = (int)reader.ReadType(typeof(int));
-                    else
-                        id = (short)reader.ReadType(typeof(short));
-
-                    item.SetValue(entity, id);
-                    if(RecorReaders.GetRecord(valid.RecoredTable, id) == null)
-                    {
-                        return null;
-                    }
                     continue;
                 }
-                List<ChooseAttribute?> choises = item.GetCustomAttributes(typeof(ChooseAttribute)).Select(x => x as ChooseAttribute).ToList();
-                if (choises.Count > 0)
+                if(reader.ReadChooise(item, test, entity))
                 {
-                    var choiseSelect = (byte)reader.ReadType(typeof(byte));
-                    var choise = choises.FirstOrDefault(x => x.Value == choiseSelect);
-                    if(choise != null)
-                    {
-                        var r = reader.Read(choise.DataType, values);
-                        item.SetValue(entity, r);
-                    }
                     continue;
                 }
-                List<IfAttribute?> ifs = item.GetCustomAttributes(typeof(IfAttribute)).Select(x => x as IfAttribute).ToList();
-                if(ifs.Count > 0)
+                var i = reader.ReadIf(item, test);
+                if (i != 0)
                 {
-                    var vals = ifs.FirstOrDefault(x => x.A(test.FirstOrDefault(y => y.Key.Name == x.v1).Value));
-                    if(vals != null)
+                    if(i == 1) continue;
+                    if (item.GetCustomAttribute<EndIfAttribute>() != null)
                     {
-                        if (item.PropertyType.IsArray)
-                        {
-                            if (test.ContainsKey(item)) continue;
-                            test.Add(item, reader.ReadArry(item, test));
-                            item.SetValue(entity, test[item]);
-                        }
-                        else
-                        {
-                            if (test.ContainsKey(item)) continue;
-                            test.Add(item, reader.ReadSingle(item, test));
-                            item.SetValue(entity, test[item]);
-                        }
-                        if (item.GetCustomAttribute<EndIfAttribute>() != null)
-                            return entity;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
 
-                if (item.PropertyType.IsArray)
-                {
-                    if (test.ContainsKey(item)) continue;
-                    test.Add(item, reader.ReadArry(item, test));
-                    item.SetValue(entity, test[item]);
+                        if (reader._Read(item, test, entity)) { }
+                        return entity;
+                    }
                 }
                 else
                 {
-                    if (test.ContainsKey(item)) continue;
-                    test.Add(item, reader.ReadSingle(item, test));
-                    item.SetValue(entity, test[item]);
+                }
+
+                if(reader._Read(item, test, entity))
+                {
+
                 }
             }
 
             return entity;
         }
 
-        public static object ReadSingle(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static int ReadIf(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
-            var res = reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
-            if (res == null)
-            {
-                res = reader.Read(info.PropertyType, values);
-            }
-            return res;
+            List<IfAttribute?> ifs = info.GetCustomAttributes(typeof(IfAttribute)).Select(x => x as IfAttribute).ToList();
+            if (ifs.Count == 0) return 0;
+
+            var vals = ifs.FirstOrDefault(x => x.A(values.FirstOrDefault(y => y.Key.Name == x.v1).Value));
+
+            return vals != null ? 2 : 1;
         }
 
-        public static int convertToInt(object source)
+        private static bool ReadChooise(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
+        {
+
+            List<ChooseAttribute?> choises = info.GetCustomAttributes(typeof(ChooseAttribute)).Select(x => x as ChooseAttribute).ToList();
+            if (choises.Count > 0)
+            {
+                var choiseSelect = (byte)reader.ReadType(typeof(byte));
+                var choise = choises.FirstOrDefault(x => x.Value == choiseSelect);
+                if (choise != null)
+                {
+                    var r = reader.Read(choise.DataType, values);
+                    info.SetValue(entity, r);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private static bool ReadValid(this BinaryReader reader, PropertyInfo info, object entity)
+        {
+            // Get validRecordAttribute
+            // Check if there is an attribute
+            var valids = info.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
+            if (valids == null) return true;
+
+            // Get Record ID
+            if (info.PropertyType != typeof(int) && info.PropertyType != typeof(short)) throw new WrongTypeExcetion($"Invalid type `{info.PropertyType}`");
+            int id;
+            if (info.PropertyType == typeof(int))
+            {
+                id = reader.ReadType<int>();
+                info.SetValue(entity, id);
+            }
+            else
+            {
+                id = reader.ReadType<short>();
+                info.SetValue(entity, (short)id);
+            }
+
+            // Check if record exsist
+            // Return `True` if exist otherwise return `False`
+            return RecorReaders.GetRecord(valids.RecoredTable, id) == null;
+        }
+
+        private static bool _Read(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
+        {
+            if (info.PropertyType.IsArray)
+            {
+                if (values.ContainsKey(info)) return false;
+                values.Add(info, reader.ReadArry(info, values));
+                info.SetValue(entity, values[info]);
+            }
+            else
+            {
+                if (values.ContainsKey(info)) return false;
+                values.Add(info, reader.ReadSingle(info, values));
+                info.SetValue(entity, values[info]);
+            }
+            return true;
+        }
+
+        #region test
+        private static int convertToInt(object source)
         {
             BinaryFormatter bf = new BinaryFormatter();
             using var ms = new MemoryStream();
@@ -189,33 +221,50 @@ namespace TOP_Network.Converter
             return BitConverter.ToInt32(target);
         }
 
-        public static object ReadArry(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static object ReadArry(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
-                var res = reader.ReadType(info.PropertyType);
-                if (res == null)
+            var res = reader.ReadType(info.PropertyType);
+            if (res == null)
+            {
+                int size = 0;
+                ArraySizeAttribute? t = info.GetCustomAttribute<ArraySizeAttribute>() as ArraySizeAttribute;
+                ArrayLengthAttribute? al = info.GetCustomAttribute<ArrayLengthAttribute>() as ArrayLengthAttribute;
+                if (t != null)
                 {
-                    int size = 0;
-                    ArraySizeAttribute? t = info.GetCustomAttribute<ArraySizeAttribute>() as ArraySizeAttribute;
-                    if (t != null)
-                    {
-                        size = reader.ReadType(t.ReadType).GetHashCode();
-                    }
-                    else
-                    {
-                        size = (byte)reader.ReadType(typeof(byte));
-                    }
-                    var type = info.PropertyType.GetElementType()!;
-                    Array value = Array.CreateInstance(type, size);
-
-                    for (short i = 0; i < size; i++)
-                    {
-                        var r = reader.Read(type, values);
-                        value.SetValue(r, i);
-                    }
-
-                    return value;
+                    size = reader.ReadType(t.ReadType).GetHashCode();
                 }
-                return res;
+                else if (al != null)
+                {
+                    size = al.Length;
+                }
+                else
+                {
+                    size = (byte)reader.ReadType(typeof(byte));
+                }
+                var type = info.PropertyType.GetElementType()!;
+                Array value = Array.CreateInstance(type, size);
+
+                for (short i = 0; i < size; i++)
+                {
+                    var r = reader.Read(type, values);
+                    value.SetValue(r, i);
+                }
+
+                return value;
+            }
+            return res;
         }
+
+        private static object ReadSingle(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        {
+            var res = reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+            if (res == null)
+            {
+                res = reader.Read(info.PropertyType, values);
+            }
+            return res;
+        }
+        #endregion
+
     }
 }

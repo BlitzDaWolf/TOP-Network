@@ -20,6 +20,7 @@ public class Program
         PacketToClass.AddType<SystemInformation>(Commands.CMD_MC_SYSINFO);
         PacketToClass.AddType<Notification>(Commands.CMD_MC_NOTIACTION);
         PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
+        PacketToClass.AddType<CharacterBeginSee>(Commands.CMD_MC_CHABEGINSEE);
 
         var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets").SelectMany(Directory.GetFiles).ToList();
 
@@ -29,7 +30,10 @@ public class Program
 
         while (files.Count > 0)
         {
+            if (files[0].Contains("CMD_MC_CHABEGINSEE"))
+            {
 
+            }
             Console.Title = $"[{invalid}/{notRead}/{totalSize}]";
             try
             {

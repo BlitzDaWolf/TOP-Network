@@ -6,10 +6,10 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="1000">
     <Grid>
-        <ScrollViewer Margin="200,0,0,0" Width="495" HorizontalAlignment="Left" VerticalAlignment="Top" VerticalScrollBarVisibility="Auto">
-            <packetwpf:HexViewer x:Name="viewer" Width="475" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <ScrollViewer Margin="200,0,0,0" Width="895" HorizontalAlignment="Left" VerticalAlignment="Top" VerticalScrollBarVisibility="Auto">
+            <packetwpf:HexViewer x:Name="viewer" Width="875" HorizontalAlignment="Left" VerticalAlignment="Top" />
         </ScrollViewer>
-        <TreeView HorizontalAlignment="Left" Width="200" x:Name="treeView"/>
-        <TreeView HorizontalAlignment="Right" Margin="695,0,0,0" x:Name="classV"/>
+        <TreeView HorizontalAlignment="Left" Width="200" x:Name="treeView" SelectedItemChanged="treeView_SelectedItemChanged"/>
+        <TreeView HorizontalAlignment="Right" Width="800" Margin="695,0,0,0" x:Name="classV"/>
     </Grid>
 </Window>

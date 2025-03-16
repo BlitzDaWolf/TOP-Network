@@ -34,7 +34,14 @@ namespace TOP_Packets.Server
     }
     public class LookAction : NotificationAction
     {
-
+        public byte SyncType { get; set; }
+        public short TypeID { get; set; }
+        public short HairID { get; set; }
+        public short A { get; set; }
+        public short B { get; set; }
+        public short C { get; set; }
+        public short D { get; set; }
+        public short E { get; set; }
     }
     public class SkillSrc : NotificationAction
     {
@@ -57,7 +64,7 @@ namespace TOP_Packets.Server
         public byte FightId { get; set; }
         public short Angle { get; set; }
         public short State { get; set; }
-        [NotIf("State", 0)]
+        [NotIf("State", (short)0)]
         public short StopState { get; set; }
 
         [Description("Used skill")]
@@ -78,8 +85,18 @@ namespace TOP_Packets.Server
 
         public short StateNumber { get; set; }
     }
+    public class SkillState
+    {
+        public short A { get; set; }
+        public byte Actin { get; set; }
+        [SmallEndean]
+        public long LA { get; set; }
+        public long LB { get; set; }
+
+    }
     public class SkillTar : NotificationAction
     {
+
         public byte FightId { get; set; }
         public short State { get; set; }
 
@@ -104,8 +121,10 @@ namespace TOP_Packets.Server
         [ArraySize(typeof(short))]
         public Effect[] Effects { get; set; }
 
-        public bool SkillState { get; set; }
-
+        /*public bool IsSkillState { get; set; }
+        [If("IsSkillState", true)]
+        [ArraySize(typeof(short))]
+        public SkillState[] SkillState { get; set; }
 
 
         public bool IsSrcEffects { get; set; }
@@ -118,10 +137,16 @@ namespace TOP_Packets.Server
         [ArraySize(typeof(short))]
         public Effect[] SrcEffects { get; set; }
 
-        public byte A { get; set; }
+        /*public bool A { get; set; }
+        [If("A", true)]
+        public short Test { get; set; }*/
+
     }
 
-    public class ItonInfoNot :NotificationAction;
+    public class ItemFailed : NotificationAction
+    {
+        public short ItemID { get; set; }
+    }
     public class PKControll : NotificationAction
     {
         public byte A { get; set; }
@@ -137,9 +162,9 @@ namespace TOP_Packets.Server
         [Choose(1, typeof(MoveAction))]
         [Choose(3, typeof(SkillSrc))]
         [Choose(4, typeof(SkillTar))]
-        //[Choose(5, typeof(NotificationA))]
-        [Choose(6, typeof(LookAction))]
-        [Choose(15, typeof(ItonInfoNot))]
+        [Choose(5, typeof(LookAction))]
+        // [Choose(6, typeof(LookAction))]
+        [Choose(15, typeof(ItemFailed))]
         [Choose(21, typeof(StopState))]
         [Choose(22, typeof(PKControll))]
         [Description("Action")]

@@ -8,10 +8,11 @@ namespace TOP_Packets
 
         public ulong Value() => LongValue != 0 ? LongValue : ShortValue;
 
-        [If("Attribute", 15)]
-        [If("Attribute", 16)]
-        [If("Attribute", 17)]
+        [If("Attribute", (byte)15)]
+        [If("Attribute", (byte)16)]
+        [If("Attribute", (byte)17)]
         [EndIf]
+        [SmallEndean]
         public ulong LongValue { get; set; }
 
         public uint ShortValue { get; set; }
