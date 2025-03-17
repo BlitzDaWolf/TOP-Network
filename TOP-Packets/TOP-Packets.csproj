@@ -11,8 +11,4 @@
     <ProjectReference Include="..\TOP-Network\TOP-Network.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Client\" />
-  </ItemGroup>
-
 </Project>

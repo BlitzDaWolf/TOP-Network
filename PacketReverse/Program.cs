@@ -12,6 +12,9 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
+        t();
+        return;
+
         PacketToClass.AddType<MissionLog>(Commands.CMD_MC_MISLOG);
         PacketToClass.AddType<MissionPage>(Commands.CMD_MC_MISPAGE);
         PacketToClass.AddType<MissionLogInfo>(Commands.CMD_MC_MISLOGINFO);

@@ -68,10 +68,9 @@ namespace TOP_Network.Converter
             reader.ReadType(typeof(int));
             reader.ReadType(typeof(int));
 
-            var command = (Commands)(short)reader.ReadType(typeof(short));
-
             try
             {
+                var command = (Commands)(short)reader.ReadType(typeof(short));
                 if (!keyValuePairs.ContainsKey(command))
                 {
                     throw new Exception($"Command [{command}] was not found");
@@ -89,8 +88,17 @@ namespace TOP_Network.Converter
 
                 return result;
             }
+            catch (NotFullyReadException e)
+            {
+                throw e;
+            }
             catch (Exception e)
             {
+                if (reader.BaseStream.Position != packet.Size)
+                {
+                    var missed = packet.Size - reader.BaseStream.Position;
+                    reader.ReadBytes((int)missed);
+                }
                 throw e;
             }
         }
@@ -263,6 +271,11 @@ namespace TOP_Network.Converter
                 res = reader.Read(info.PropertyType, values);
             }
             return res;
+        }
+
+        public static bool HasCommand(Commands command)
+        {
+            return keyValuePairs.ContainsKey(command);
         }
         #endregion
 
