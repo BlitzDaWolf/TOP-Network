@@ -24,7 +24,7 @@ namespace NetworkTest.Extentions
         [Fact]
         public void Fact_ReadByte()
         {
-            using var reader = CreateReader("Byte.tst");
+            using var reader = CreateReader("byte.tst");
             Assert.Equal(64, reader.ReadType<byte>());
         }
         [Fact]
