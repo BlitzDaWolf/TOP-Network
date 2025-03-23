@@ -16,12 +16,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        path: 'TOP-Network'
     - uses: actions/checkout@v4
       with:
         ref: main
         repository: BlitzDaWolf/TOP-Records
         token: ${{ secrets.GH_PAT }}
-        path: '../TOP-Records'
+        path: 'TOP-Records'
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
