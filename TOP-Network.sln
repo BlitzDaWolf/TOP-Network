@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Network", "TOP-Network\TOP-Network.csproj", "{075A7CAE-CB13-4061-89E7-A7792CA39AA9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Records", "TOP-Records\TOP-Records\TOP-Records.csproj", "{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TOP-Records", "..\TOP-Records\TOP-Records\TOP-Records.csproj", "{E4E435CC-2CFF-4B9C-B70A-D10640B0329A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libary", "Libary", "{BA0787F5-C83C-47DF-A6E2-2852B51DE425}"
 EndProject

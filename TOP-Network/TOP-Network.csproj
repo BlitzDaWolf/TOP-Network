@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TOP-Records\TOP-Records\TOP-Records.csproj" />
+    <ProjectReference Include="..\..\TOP-Records\TOP-Records\TOP-Records.csproj" />
   </ItemGroup>
 
 </Project>
