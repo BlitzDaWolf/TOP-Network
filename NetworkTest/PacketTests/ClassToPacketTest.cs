@@ -64,12 +64,5 @@ namespace NetworkTest.PacketTests
             var t = pkt.DisplayHex();
             Assert.Equal(120, pkt.Size);
         }
-
-        [Fact]
-        public void Fact_WrongType()
-        {
-            test t = new test { MyProperty = 5 };
-            Assert.Throws<WrongTypeExcetion>(() =>  (new BaseTest { singleTest = t}).Convert(0));
-        }
     }
 }

@@ -210,7 +210,7 @@ namespace NetworkTest.Extentions
             byte[] Data = new byte[16];
             using var writer = CreateWriter(Data);
 
-            Assert.Throws<BinaryException>(() => writer.WriteType(new List<object>()));
+            Assert.False(writer.WriteType(new List<object>()));
         }
     }
 }

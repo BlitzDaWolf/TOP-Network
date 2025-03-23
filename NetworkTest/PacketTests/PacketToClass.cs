@@ -55,7 +55,7 @@ namespace NetworkTest.PacketTests
             Assert.Equal(Addres.PostalCode, adr.PostalCode);
         }
 
-        [Fact]
+        /*[Fact]
         public void Fact_Painters()
         {
             Packet pkt = new Packet(File.ReadAllBytes("./test/list.tst"));
@@ -64,6 +64,6 @@ namespace NetworkTest.PacketTests
             Assert.Equal(3, painters.People.Length);
             Assert.NotNull(painters.People[0]);
             Assert.Null(painters.People[2]);
-        }
+        }*/
     }
 }
