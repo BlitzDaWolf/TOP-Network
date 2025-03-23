@@ -18,6 +18,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/checkout@v4
       with:
+        ref: main
         repository: BlitzDaWolf/TOP-Records
         path: TOP-Records
         token: ${{ secrets.GH_PAT }}
