@@ -17,8 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8420F0CB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PacketReverse", "PacketReverse\PacketReverse.csproj", "{AA087E22-1E12-424B-B459-E67903C6A7ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PacketWPF", "PacketWPF\PacketWPF.csproj", "{91733BC7-78A8-4ECA-99EA-39D77C3D51B0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,10 +43,6 @@ Global
 		{AA087E22-1E12-424B-B459-E67903C6A7ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA087E22-1E12-424B-B459-E67903C6A7ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA087E22-1E12-424B-B459-E67903C6A7ED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{91733BC7-78A8-4ECA-99EA-39D77C3D51B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{91733BC7-78A8-4ECA-99EA-39D77C3D51B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{91733BC7-78A8-4ECA-99EA-39D77C3D51B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{91733BC7-78A8-4ECA-99EA-39D77C3D51B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
