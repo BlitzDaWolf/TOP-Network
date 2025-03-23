@@ -33,5 +33,10 @@ namespace TOP_Network.Packets
         }
 
         public string DisplayHex()=> ($"{BitConverter.ToString(Data.Take(Size).ToArray()).Replace("-", " ")}");
+
+        public void Save(string Path)
+        {
+            File.WriteAllBytes(Path, Data);
+        }
     }
 }

@@ -6,6 +6,7 @@ using System.Windows.Media;
 using TOP_Network.Converter;
 using TOP_Network.Enum;
 using TOP_Network.Exceptions;
+using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Packets;
 using TOP_Packets.Client;
@@ -64,21 +65,21 @@ namespace PacketWPF
                     var pkt = new Packet(File.ReadAllBytes(files[0]).Take(12).ToArray());
                     if (!PacketToClass.HasCommand(pkt.Command))
                     {
-                        //files.RemoveAt(0);
-                        //continue;
+                        files.RemoveAt(0);
+                        continue;
                     }
-                    /*if((/*pkt.Command == Commands.CMD_MC_CHABEGINSEE || * /pkt.Command == Commands.CMD_MC_NOTIACTION ||* / pkt.Command == Commands.CMD_MC_TEAM))
+                    if((pkt.Command != Commands.CMD_MC_CHABEGINSEE))
                     {
                         files.RemoveAt(0);
                         continue;
-                    }*/
+                    }
                     // if (PacketToClass.HasCommand(pkt.Command) && pkt.Command == Commands.CMD_MC_CHABEGINSEE)
                     {
                         pkt = new Packet(File.ReadAllBytes(files[0]));
-                        var r = pkt.Convert();
-                        File.Delete(files[0]);
-                        files.RemoveAt(0);
-                        continue;
+                        //var r = pkt.Convert();
+                        // File.Delete(files[0]);
+                        //files.RemoveAt(0);
+                        //continue;
                     }
                     /*else
                     {
@@ -139,14 +140,28 @@ namespace PacketWPF
             {
                 var pkt = new Packet(File.ReadAllBytes(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets\" + v));
                 classV.Items.Add("Command: " + pkt.Command);
-                var r = pkt.Convert()!;
+                object r = pkt.Convert()!;
                 var t = r;
-                var properties = t.GetType().GetProperties();
-                foreach (var property in properties)
+
+                pkt.Save("./SRC.packet");
+                var sz = r.Convert(pkt.Command);
+                sz.Save("./TAR.packet");
+
+                List<int> unvalidPost = new List<int>();
+                // sz.Convert();
+
+                for (int i = 0; i < Math.Min(pkt.Size, sz.Size); i++)
                 {
-                    var value = property.GetValue(t);
-                    classV.Items.Add($"{property.Name}: {value}");
+                    if (sz.Data[i] != pkt.Data[i])
+                    {
+
+                    }
                 }
+
+                pkt.Save("./SRC.packet");
+                sz.Save("./TAR.packet");
+
+                Display(t);
             }
             catch (NotFullyReadException ex)
             {
