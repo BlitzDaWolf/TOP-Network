@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TOP_Network.Attributes;
+using TOP_Packets.Shared;
 using TOP_Records.Tables;
 
 namespace TOP_Packets.Server
@@ -34,15 +35,9 @@ namespace TOP_Packets.Server
     }
     public class LookAction : NotificationAction
     {
-        public byte SyncType { get; set; }
-        public short TypeID { get; set; }
-        public short HairID { get; set; }
-        public short A { get; set; }
-        public short B { get; set; }
-        public short C { get; set; }
-        public short D { get; set; }
-        public short E { get; set; }
+        public NetworkLook Look { get; set; }
     }
+
     public class SkillSrc : NotificationAction
     {
         public abstract class SkillState;
@@ -87,12 +82,8 @@ namespace TOP_Packets.Server
     }
     public class SkillState
     {
-        public short A { get; set; }
-        public byte Actin { get; set; }
-        [SmallEndean]
-        public long LA { get; set; }
-        public long LB { get; set; }
-
+        [ArraySize(typeof(byte))]
+        public Skill[] Skills { get; set; }
     }
     public class SkillTar : NotificationAction
     {
@@ -112,8 +103,8 @@ namespace TOP_Packets.Server
         public int SkillID { get; set; }
         //public byte Skip { get; set; }
 
-        public int TarX { get; set; }
-        public int TarY { get; set; }
+        public uint TarX { get; set; }
+        public uint TarY { get; set; }
 
         public ushort ExecTime { get; set; }
 
@@ -121,24 +112,22 @@ namespace TOP_Packets.Server
         [ArraySize(typeof(short))]
         public Effect[] Effects { get; set; }
 
-        /*public bool IsSkillState { get; set; }
+        public bool IsSkillState { get; set; }
         [If("IsSkillState", true)]
         [ArraySize(typeof(short))]
-        public SkillState[] SkillState { get; set; }
+        public Skill[] Skills { get; set; }
 
-
+        [BreakIf(false)]
         public bool IsSrcEffects { get; set; }
 
-        [If("IsSrcEffects", true)]
+        // [If("IsSrcEffects", true)]
         public short SrcState { get; set; }
-        [If("IsSrcEffects", true)]
         public byte SrcSync { get; set; }
-        [If("IsSrcEffects", true)]
         [ArraySize(typeof(short))]
         public Effect[] SrcEffects { get; set; }
 
-        /*public bool A { get; set; }
-        [If("A", true)]
+        public bool IsSrcState { get; set; }
+        /*[If("A", true)]
         public short Test { get; set; }*/
 
     }
@@ -152,6 +141,12 @@ namespace TOP_Packets.Server
         public byte A { get; set; }
     }
 
+    public class KitBagNotification : NotificationAction
+    {
+        public KitBag Bag { get; set; }
+    }
+
+
     public class Notification
     {
         [Description("Wich entity should be using this Action (`ComunicationID`)")]
@@ -163,7 +158,7 @@ namespace TOP_Packets.Server
         [Choose(3, typeof(SkillSrc))]
         [Choose(4, typeof(SkillTar))]
         [Choose(5, typeof(LookAction))]
-        // [Choose(6, typeof(LookAction))]
+        [Choose(6, typeof(KitBagNotification))]
         [Choose(15, typeof(ItemFailed))]
         [Choose(21, typeof(StopState))]
         [Choose(22, typeof(PKControll))]

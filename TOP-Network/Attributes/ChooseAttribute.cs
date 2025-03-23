@@ -3,13 +3,17 @@
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class ChooseAttribute : Attribute
     {
-        public ChooseAttribute(byte value, Type dataType)
+        public ChooseAttribute(int value, Type dataType) : this(value, dataType, typeof(byte)) { }
+
+        public ChooseAttribute(int value, Type dataType, Type readType)
         {
             Value = value;
             DataType = dataType;
+            ReadType = readType;
         }
 
-        public byte Value { get; set; }
+        public int Value { get; set; }
         public Type DataType { get; set; }
+        public Type ReadType { get; set; }
     }
 }

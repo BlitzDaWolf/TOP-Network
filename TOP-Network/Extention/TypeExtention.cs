@@ -15,5 +15,12 @@ namespace TOP_Network.Extention
             var function = (Func<int>)dynamicMethod.CreateDelegate(typeof(Func<int>));
             return function();
         }
+
+        public static object? GetValue(this object o, string search)
+        {
+            var properties = o.GetType().GetProperties().FirstOrDefault(x => x.Name == search);
+            if (properties == null) return null;
+            return properties.GetValue(o);
+        }
     }
 }

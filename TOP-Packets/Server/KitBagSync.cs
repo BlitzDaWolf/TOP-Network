@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TOP_Packets.Client
+namespace TOP_Packets.Server
 {
-    public class MapMask
+    public class KitBagSync
     {
-        public string Map { get; set; }
+        public KitBag Bag { get; set; }
     }
 }

@@ -49,6 +49,22 @@ namespace TOP_Packets.Client
         public short SourceNumber { get; set; }
         public short TargetGridId { get; set; }
     }
+    public class ItemUnfixNotification : NotificationAction
+    {
+        public byte LinkId { get; set; }
+        public short GridID { get; set; }
+
+        [If("GridID", (short)-1)]
+        public uint X { get; set; }
+        [If("GridID", (short)-1)]
+        public uint Y { get; set; }
+    }
+    public class EventNotification : NotificationAction
+    {
+        public uint TargetID { get; set; }
+        public uint Handle { get; set; }
+        public short EventID { get; set; }
+    }
 
     public class BeginAction
     {
@@ -61,6 +77,8 @@ namespace TOP_Packets.Client
         [Choose(0x0B, typeof(ItemUse))]
         [Choose(0x0C, typeof(ItemPosition))]
         [Choose(0x15, typeof(SkillPose))]
+        [Choose(18, typeof(EventNotification))]
+        [Choose(0x0A, typeof(ItemUnfixNotification))]
         [Description("Action")]
         public NotificationAction ActionType { get; set; }
     }

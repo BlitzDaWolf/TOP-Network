@@ -1,10 +1,12 @@
 ﻿using TOP_Network.Attributes;
+using TOP_Network.Enum;
 
 namespace TOP_Packets
 {
     public class Effect
     {
-        public byte Attribute { get; set; }
+        [ReadType(typeof(byte))]
+        public EffectAttributes Attribute { get; set; }
 
         public ulong Value() => LongValue != 0 ? LongValue : ShortValue;
 
@@ -16,5 +18,7 @@ namespace TOP_Packets
         public ulong LongValue { get; set; }
 
         public uint ShortValue { get; set; }
+
+        public override string ToString() => $"{(EffectAttributes)Attribute} {Value()}";
     }
 }

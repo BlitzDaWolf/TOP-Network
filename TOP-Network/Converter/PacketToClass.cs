@@ -6,9 +6,6 @@ using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
-using static System.Net.Mime.MediaTypeNames;
-using TOP_Records.Tables;
-using System.Xml;
 
 namespace TOP_Network.Converter
 {
@@ -81,7 +78,7 @@ namespace TOP_Network.Converter
                     var h = packet.DisplayHex();
                     var missed = packet.Size - reader.BaseStream.Position;
 
-                    reader.ReadBytes((int)missed);
+                    var m = reader.ReadBytes((int)missed);
 
                     throw new NotFullyReadException(result);
                 }
@@ -111,9 +108,31 @@ namespace TOP_Network.Converter
 
             foreach (var item in properties)
             {
-                if (!reader.ReadValid(item, entity))
+                var result = reader.ReadValid(item, entity);
+                if (result == 2)
                 {
+                    return entity;
+                }
+                else if(result == 1)
+                {
+                    test.Add(item, item.GetValue(entity));
                     continue;
+                }
+                else
+                {
+
+                }
+                var ff = reader.ReadBreak(item, test, entity);
+                if (ff != null)
+                {
+                    if (ff == true)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
                 if(reader.ReadChooise(item, test, entity))
                 {
@@ -145,12 +164,33 @@ namespace TOP_Network.Converter
 
         private static int ReadIf(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
-            List<IfAttribute?> ifs = info.GetCustomAttributes(typeof(IfAttribute)).Select(x => x as IfAttribute).ToList();
+            List<IfAttribute> ifs = info.GetCustomAttributes<IfAttribute>().Where(x => x is not WhileAttribute).ToList();
             if (ifs.Count == 0) return 0;
 
+            var tst = ifs.FirstOrDefault(x => x.v1.StartsWith("record."));
+            if(tst != null)
+            {
+                var ty = values.Where(x => x.Key.GetCustomAttribute<ValidRecordAttribute>() != null).ToList();
+                var recored = ty.Select(x => x.Key.GetCustomAttribute<ValidRecordAttribute>().GetRecord(x.Value.GetHashCode())).ToList();
+                var valss = recored.Select(x => x.GetValue(tst.v1.Replace("record.", ""))).ToList();
+
+                return valss.Where(x => tst.A(x)).Count() != 0 ? 2 : 1;
+            }
+
+            var value = ifs.Select(x => values.FirstOrDefault(y => y.Key.Name == x.v1)).ToList();
             var vals = ifs.FirstOrDefault(x => x.A(values.FirstOrDefault(y => y.Key.Name == x.v1).Value));
 
             return vals != null ? 2 : 1;
+        }
+        private static bool? ReadBreak(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
+        {
+            BreakIfAttribute? ifs = info.GetCustomAttribute<BreakIfAttribute>();
+            if (ifs == null) return null;
+
+            reader._Read(info, values, entity);
+            var v = values[info];
+
+            return ifs.Check(v);
         }
 
         private static bool ReadChooise(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
@@ -159,7 +199,9 @@ namespace TOP_Network.Converter
             List<ChooseAttribute?> choises = info.GetCustomAttributes(typeof(ChooseAttribute)).Select(x => x as ChooseAttribute).ToList();
             if (choises.Count > 0)
             {
-                var choiseSelect = (byte)reader.ReadType(typeof(byte));
+                var readType = choises[0]!.ReadType;
+                var v = reader.ReadType(readType);
+                var choiseSelect = v.GetHashCode();
                 var choise = choises.FirstOrDefault(x => x.Value == choiseSelect);
                 if (choise != null)
                 {
@@ -171,43 +213,52 @@ namespace TOP_Network.Converter
             return false;
         }
 
-        private static bool ReadValid(this BinaryReader reader, PropertyInfo info, object entity)
+        private static byte ReadValid(this BinaryReader reader, PropertyInfo info, object entity)
         {
             // Get validRecordAttribute
             // Check if there is an attribute
-            var valids = info.GetCustomAttributes(typeof(ValidRecordAttribute)).FirstOrDefault() as ValidRecordAttribute;
-            if (valids == null) return true;
+            var valids = info.GetCustomAttributes<ValidRecordAttribute>().FirstOrDefault();
+            if (valids == null) return 0x00;
 
             // Get Record ID
-            if (info.PropertyType != typeof(int) && info.PropertyType != typeof(short)) throw new WrongTypeExcetion($"Invalid type `{info.PropertyType}`");
+            if (info.PropertyType != typeof(int) && info.PropertyType != typeof(short) && info.PropertyType != typeof(uint) && info.PropertyType != typeof(ushort)) throw new WrongTypeExcetion($"Invalid type `{info.PropertyType}`");
             int id;
             if (info.PropertyType == typeof(int))
             {
-                id = reader.ReadType<int>();
+                id = (int)reader.ReadType(typeof(int), info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
                 info.SetValue(entity, id);
+            }
+            else if (info.PropertyType == typeof(short))
+            {
+                id = (short)reader.ReadType(typeof(short), info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+                info.SetValue(entity, (short)id);
+            }
+            else if (info.PropertyType == typeof(ushort))
+            {
+                id = (ushort)reader.ReadType(typeof(ushort), info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+                info.SetValue(entity, (ushort)id);
             }
             else
             {
-                id = reader.ReadType<short>();
-                info.SetValue(entity, (short)id);
+                id = 0;
             }
 
             // Check if record exsist
             // Return `True` if exist otherwise return `False`
-            return RecorReaders.GetRecord(valids.RecoredTable, id) == null;
+            return RecorReaders.GetRecord(valids.RecoredTable, id) == null ? (byte)2 : (byte)1;
         }
 
         private static bool _Read(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
         {
+            if (values.ContainsKey(info)) return false;
+
             if (info.PropertyType.IsArray)
             {
-                if (values.ContainsKey(info)) return false;
                 values.Add(info, reader.ReadArry(info, values));
                 info.SetValue(entity, values[info]);
             }
             else
             {
-                if (values.ContainsKey(info)) return false;
                 values.Add(info, reader.ReadSingle(info, values));
                 info.SetValue(entity, values[info]);
             }
@@ -235,11 +286,16 @@ namespace TOP_Network.Converter
             if (res == null)
             {
                 int size = 0;
-                ArraySizeAttribute? t = info.GetCustomAttribute<ArraySizeAttribute>() as ArraySizeAttribute;
-                ArrayLengthAttribute? al = info.GetCustomAttribute<ArrayLengthAttribute>() as ArrayLengthAttribute;
+                ArraySizeAttribute? t = info.GetCustomAttribute<ArraySizeAttribute>();
+                ArrayLengthAttribute? al = info.GetCustomAttribute<ArrayLengthAttribute>();
+                WhileAttribute? w = info.GetCustomAttribute<WhileAttribute>();
                 if (t != null)
                 {
-                    size = reader.ReadType(t.ReadType).GetHashCode();
+                    size = reader.ReadType(t.ReadType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null).GetHashCode();
+                }
+                else if(w != null)
+                {
+                    size = w.Max;
                 }
                 else if (al != null)
                 {
@@ -252,10 +308,23 @@ namespace TOP_Network.Converter
                 var type = info.PropertyType.GetElementType()!;
                 Array value = Array.CreateInstance(type, size);
 
-                for (short i = 0; i < size; i++)
+                if (w == null)
                 {
-                    var r = reader.Read(type, values);
-                    value.SetValue(r, i);
+                    for (short i = 0; i < size; i++)
+                    {
+                        var r = reader.Read(type, values);
+                        value.SetValue(r, i);
+                    }
+                }
+                else
+                {
+                    for (short i = 0; i < size; i++)
+                    {
+                        var v = reader.ReadType(w.ReadType);
+                        if (!w.A(v)) break;
+                        var r = reader.Read(type, values);
+                        value.SetValue(r, v.GetHashCode());
+                    }
                 }
 
                 return value;
@@ -265,6 +334,13 @@ namespace TOP_Network.Converter
 
         private static object ReadSingle(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
+
+            if (info.GetCustomAttribute<ReadTypeAttribute>() != null)
+            {
+                var result = reader.ReadType(info.GetCustomAttribute<ReadTypeAttribute>().ReadType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+                return result;
+            }
+
             var res = reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
             if (res == null)
             {

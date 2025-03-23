@@ -7,8 +7,11 @@ using TOP_Network.Converter;
 using TOP_Network.Enum;
 using TOP_Network.Exceptions;
 using TOP_Network.Packets;
+using TOP_Packets;
 using TOP_Packets.Client;
+using TOP_Packets.GroupServer;
 using TOP_Packets.Server;
+using TOP_Packets.Server.MissionLogs;
 using TOP_Records;
 using TOP_Records.Tables;
 
@@ -27,33 +30,9 @@ namespace PacketWPF
         {
             InitializeComponent();
 
-            // Done
-            PacketToClass.AddType<Notification>(Commands.CMD_MC_NOTIACTION);
-            PacketToClass.AddType<FuncPage>(Commands.CMD_MC_FUNCPAGE);
-            PacketToClass.AddType<MissionLog>(Commands.CMD_MC_MISLOG);
-            PacketToClass.AddType<MissionPage>(Commands.CMD_MC_MISPAGE);
-            PacketToClass.AddType<MissionLogInfo>(Commands.CMD_MC_MISLOGINFO);
-            PacketToClass.AddType<NpcStateChange>(Commands.CMD_MC_NPCSTATECHG);
-            PacketToClass.AddType<SystemInformation>(Commands.CMD_MC_SYSINFO);
-            PacketToClass.AddType<SyncAtt>(Commands.CMD_MC_SYNATTR);
-            PacketToClass.AddType<SyncSkillState>(Commands.CMD_MC_SYNASKILLSTATE);
-            PacketToClass.AddType<AStateBeginSee>(Commands.CMD_MC_ASTATEBEGINSEE);
-
-            PacketToClass.AddType<CharacterEndSee>(Commands.CMD_MC_CHAENDSEE);
-            PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
-
-            PacketToClass.AddType<BeginAction>(Commands.CMD_CM_BEGINACTION);
-            PacketToClass.AddType<BeginPlay>(Commands.CMD_CM_BGNPLAY);
-            PacketToClass.AddType<ClientPing>(Commands.CMD_CM_CHECK_PING);
-            PacketToClass.AddType<DieReturn>(Commands.CMD_CM_DIE_RETURN);
-            PacketToClass.AddType<MapMask>(Commands.CMD_CM_MAP_MASK);
-            PacketToClass.AddType<RequestTalk>(Commands.CMD_CM_REQUESTTALK);
-
-            PacketToClass.AddType<ItemBeginSee>(Commands.CMD_MC_ITEMBEGINSEE);
-            PacketToClass.AddType<AsteEndSee>(Commands.CMD_MC_ASTATEENDSEE);
-
-            // Look
-            PacketToClass.AddType<CharacterBeginSee>(Commands.CMD_MC_CHABEGINSEE);
+            ServerSideRegister.Register();
+            GroupSideRegister.Register();
+            ClientSideRegister.Register();
 
             Run();
         }
@@ -64,52 +43,52 @@ namespace PacketWPF
             ItemTable itemTable = new ItemTable();
             itemTable.Init("iteminfo.bin");
 
-            var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets").SelectMany(x => Directory.GetFiles(x))
-                .Where(x => !x.Contains("CMD_MC_NOTIACTION"))
-                .Where(x => !x.Contains("CMD_MC_FUNCPAGE"))
-                .Where(x => !x.Contains("CMD_MC_MISLOG"))
-                .Where(x => !x.Contains("CMD_MC_MISPAGE"))
-                .Where(x => !x.Contains("CMD_MC_MISLOGINFO"))
-                .Where(x => !x.Contains("CMD_MC_NPCSTATECHG"))
-                .Where(x => !x.Contains("CMD_MC_SYSINFO"))
-                .Where(x => !x.Contains("CMD_MC_SYNATTR"))
-                .Where(x => !x.Contains("CMD_MC_SYNASKILLSTATE"))
-                .Where(x => !x.Contains("CMD_MC_ASTATEBEGINSEE"))
-                .Where(x => !x.Contains("CMD_MC_CHAENDSEE"))
-                .Where(x => !x.Contains("CMD_MC_ITEMENDSEE"))
-                .Where(x => !x.Contains("CMD_CM_BEGINACTION"))
-                .Where(x => !x.Contains("CMD_CM_BGNPLAY"))
-                .Where(x => !x.Contains("CMD_CM_CHECK_PING"))
-                .Where(x => !x.Contains("CMD_CM_DIE_RETURN"))
-                .Where(x => !x.Contains("CMD_CM_MAP_MASK"))
-                .Where(x => !x.Contains("CMD_CM_REQUESTTALK"))
-                .Where(x => !x.Contains("CMD_MC_CHABEGINSEE"))
-
-                .Where(x => !x.Contains("CMD_MC_CHABEGINSEE"))
+            var files = Directory.GetFiles(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets")
                 .ToList();
-            // treeView.ItemsSource = files.Select(x => x.Split("\\").Last());
-            // return;
+            /*treeView.ItemsSource = files.Select(x => "CMD_CM_REQUESTTALK\\"+ x.Split("\\").Last());
+            PacketReader.OnRead = OnRead;
+            return;*/
+
+            List<byte[]> missed = new List<byte[]>();
+
             while (files.Count > 0)
             {
                 try
                 {
-                    /*if (files.Count % 250 == 0)
+                    if (files.Count % 250 == 0)
                     {
                         await Task.Delay(100);
-                    }*/
+                    }
                     // await Task.Delay(10);
                     
                     var pkt = new Packet(File.ReadAllBytes(files[0]).Take(12).ToArray());
-                    if (PacketToClass.HasCommand(pkt.Command))
+                    if (!PacketToClass.HasCommand(pkt.Command))
+                    {
+                        //files.RemoveAt(0);
+                        //continue;
+                    }
+                    /*if((/*pkt.Command == Commands.CMD_MC_CHABEGINSEE || * /pkt.Command == Commands.CMD_MC_NOTIACTION ||* / pkt.Command == Commands.CMD_MC_TEAM))
+                    {
+                        files.RemoveAt(0);
+                        continue;
+                    }*/
+                    // if (PacketToClass.HasCommand(pkt.Command) && pkt.Command == Commands.CMD_MC_CHABEGINSEE)
                     {
                         pkt = new Packet(File.ReadAllBytes(files[0]));
                         var r = pkt.Convert();
+                        File.Delete(files[0]);
                         files.RemoveAt(0);
                         continue;
                     }
+                    /*else
+                    {
+                        files.RemoveAt(0);
+                        continue;
+                    }*/
                 }
                 catch(NotFullyReadException e)
                 {
+                    // missed.Add((byte[])e.Packet);
                     /*if (((Notification)e.Packet).ActionType is SkillTar)
                     {
                         File.Move(files[0], files[0].Replace(".packet", ".tar"));
@@ -131,10 +110,12 @@ namespace PacketWPF
                 {
                     //treeView.Items.Add(files[0].Split("\\").Last());
                 }
-                treeView.Items.Add(string.Join("\\", files[0].Split("\\").TakeLast(2)));
+                treeView.Items.Add(string.Join("\\", files[0].Split("\\").TakeLast(1)));
                 files.RemoveAt(0);
             }
+            missed.Take(25).ToList().ForEach(OnRead);
             PacketReader.OnRead = OnRead;
+            MessageBox.Show("Done");
         }
 
         private void OnRead(byte[] obj)
@@ -157,6 +138,7 @@ namespace PacketWPF
             try
             {
                 var pkt = new Packet(File.ReadAllBytes(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets\" + v));
+                classV.Items.Add("Command: " + pkt.Command);
                 var r = pkt.Convert()!;
                 var t = r;
                 var properties = t.GetType().GetProperties();
@@ -170,11 +152,81 @@ namespace PacketWPF
             {
                 var t = (ex.Packet);
                 if (t == null) return;
-                var properties = t.GetType().GetProperties();
+                /*for(int i = 1; i < t.Length; i++)
+                {
+                    var l = t.Length - (i);
+                    var tst = l / 19d;
+                    var aa = t[i - 1];
+
+                    if(tst % 1 == 0)
+                    {
+
+                    }
+
+                    if(aa == tst)
+                    {
+
+                    }
+                }*/
+                Display(t);
+                /*var properties = t.GetType().GetProperties();
                 foreach (var property in properties)
                 {
                     var value = property.GetValue(t);
-                    classV.Items.Add($"{property.Name}: {value}");
+                    if (value.GetType().IsArray)
+                    {
+                        Array a = (Array)value;
+                        for (int i = 0; i < a.Length; i++)
+                        {
+
+                        }
+                    }
+                    else
+                    {
+                        classV.Items.Add($"{property.Name}: {value}");
+                    }
+                }*/
+            }
+            catch { }
+        }
+
+        public void Display(object o, string b="")
+        {
+            if (o == null)
+            {
+                classV.Items.Add($"{b}: null");
+                return;
+            }
+            try
+            {
+                var properties = o.GetType().GetProperties();
+                foreach (var property in properties)
+                {
+                    var value = property.GetValue(o);
+                    if (value == null)
+                    {
+                        classV.Items.Add($"{b}{property.Name}: null");
+                        continue;
+                    }
+                    if (value.GetType().IsArray)
+                    {
+                        Array a = (Array)value;
+                        for (int i = 0; i < a.Length; i++)
+                        {
+                            Display(a.GetValue(i), $"{b}{property.Name}[{i}].");
+                        }
+                    }
+                    else
+                    {
+                        if (value.GetType().Assembly.GetName().Name.Contains("TOP") && !property.PropertyType.IsEnum)
+                        {
+                            Display(value, $"{b}{property.Name}.");
+                        }
+                        else
+                        {
+                            classV.Items.Add($"({property.PropertyType.Name}) {b}{property.Name}: {value}");
+                        }
+                    }
                 }
             }
             catch { }

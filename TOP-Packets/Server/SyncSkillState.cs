@@ -9,6 +9,8 @@ namespace TOP_Packets.Server
 {
     public class Skill
     {
+        /*public short SkillID { get; set; }
+        public byte Level { get; set; }*/
         public short SkillID { get; set; }
         public byte Level { get; set; }
         public long A { get; set; }
