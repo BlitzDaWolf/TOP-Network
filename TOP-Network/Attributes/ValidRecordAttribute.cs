@@ -13,7 +13,7 @@ namespace TOP_Network.Attributes
             RecoredTable = recoredTable;
         }
 
-        public Record GetRecord(int id)
+        public Record? GetRecord(int id)
         {
             return RecorReaders.GetRecord(RecoredTable, id);
         }

@@ -7,17 +7,6 @@ using TOP_Records;
 
 namespace NetworkTest.PacketTests
 {
-    struct test
-    {
-        [ValidRecord(typeof(CentryTable))]
-        public short MyProperty { get; set; }
-    }
-
-    struct BaseTest
-    {
-        public test singleTest { get; set; }
-    }
-
     public class ClassToPacketTest
     {
         public Address Addres { get; set; }
@@ -25,17 +14,17 @@ namespace NetworkTest.PacketTests
 
         public ClassToPacketTest()
         {
-            CentryTable table = new CentryTable();
-            table.Data.Add(new Centry { Exist = 1, Index = 1, Value = 16 });
-            table.Data.Add(new Centry { Exist = 1, Index = 2, Value = 18 });
+            CentryTable table = new();
+            table.Data.Add(item: new Centry { Exist = 1, Index = 1, Value = 16 });
+            table.Data.Add(item: new Centry { Exist = 1, Index = 2, Value = 18 });
             RecorReaders.Readers.Add(table);
 
 
             Addres = new Address { City = "Antwerp", Code = [(byte)'B', (byte)'E'], Country = "Belgium", PostalCode = 2000 };
 
-            Person Dyck = new Person { addres = Addres, Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
-            Person Elder = new Person { addres = Addres, Name = "The Elder", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 2 };
-            Person Younger = new Person { addres = Addres, Name = "Younger", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 3 };
+            Person Dyck = new() { addres = Addres, Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
+            Person Elder = new() { addres = Addres, Name = "The Elder", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 2 };
+            Person Younger = new() { addres = Addres, Name = "Younger", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 3 };
 
             Painters = new Painters { People = [Dyck, Elder, Younger] };
         }
@@ -61,7 +50,7 @@ namespace NetworkTest.PacketTests
 
             Painters painters = Painters;
             var pkt = painters.Convert(0).Clone();
-            var t = pkt.DisplayHex();
+            pkt.DisplayHex();
             Assert.Equal(120, pkt.Size);
         }
     }

@@ -108,7 +108,7 @@ namespace TOP_Packets.Shared
 
     public class CreateItem : SyncType
     {
-        public class test
+        public class Test
         {
             public short AA { get; set; }
             public short BB { get; set; }
@@ -123,7 +123,7 @@ namespace TOP_Packets.Shared
 
             [NotIf("Go", (byte)0)]
             [ArrayLength(5)]
-            public test[] t { get; set; }
+            public Test[] Test { get; set; }
         }
 
         public short Number { get; set; }

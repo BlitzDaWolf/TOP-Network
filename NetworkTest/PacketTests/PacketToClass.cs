@@ -12,7 +12,7 @@ namespace NetworkTest.PacketTests
 
         public PacketToClass()
         {
-            CentryTable table = new CentryTable();
+            CentryTable table = new();
             table.Data.Add(new Centry { Exist = 1, Index = 1, Value = 16 });
             table.Data.Add(new Centry { Exist = 1, Index = 2, Value = 18 });
             RecorReaders.Readers.Add(table);
@@ -20,17 +20,18 @@ namespace NetworkTest.PacketTests
 
             Addres = new Address { City = "Antwerp", Code = [(byte)'B', (byte)'E'], Country = "Belgium", PostalCode = 2000 };
 
-            Person Dyck = new Person { addres = Addres, Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
-            Person Elder = new Person { addres = Addres, Name = "The Elder", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 2 };
-            Person Younger = new Person { addres = Addres, Name = "Younger", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 3 };
+            Person Dyck = new() { addres = Addres, Name = "Van Dyck", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 1 };
+            Person Elder = new() { addres = Addres, Name = "The Elder", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 2 };
+            Person Younger = new() { addres = Addres, Name = "Younger", age = 37, BirthDay = new DateTime(1853, 3, 30, 12, 30, 30), CentryID = 3 };
 
-            Painters = new Painters { People = [Dyck, Elder, Younger] };
+            Painters painters = new() { People = [Dyck, Elder, Younger] };
+            Painters = painters;
         }
 
         [Fact]
         public void Fact_Address()
         {
-            Packet pkt = new Packet(File.ReadAllBytes("./test/address.tst"));
+            Packet pkt = new(File.ReadAllBytes("./test/address.tst"));
             var adr = pkt.Convert<Address>();
             Assert.Equal(Addres.City, adr.City);
             Assert.Equal(Addres.Code, adr.Code);

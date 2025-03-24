@@ -17,7 +17,7 @@ namespace TOP_Network.Converter
 
     public static class PacketToClass
     {
-        private static Dictionary<Commands, Type> keyValuePairs = new Dictionary<Commands, Type>();
+        private static Dictionary<Commands, Type> keyValuePairs = new();
 
         public static void AddType<T>(Commands command)
         {
@@ -30,7 +30,7 @@ namespace TOP_Network.Converter
 
         public static T Convert<T>(this Packet packet)
         {
-            Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
+            Dictionary<PropertyInfo, object> values = new();
 
             using var reader = packet.GetBitReader();
             reader.ReadType(typeof(int));
@@ -50,16 +50,16 @@ namespace TOP_Network.Converter
 
                 return result;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.WriteLine(packet.DisplayHex());
-                throw e;
+                throw;
             }
         }
 
         public static object? Convert(this Packet packet)
         {
-            Dictionary<PropertyInfo, object> values = new Dictionary<PropertyInfo, object>();
+            Dictionary<PropertyInfo, object> values = [];
 
             using var reader = packet.GetBitReader();
             reader.ReadType(typeof(int));
@@ -67,7 +67,7 @@ namespace TOP_Network.Converter
 
             try
             {
-                var command = (Commands)(short)reader.ReadType(typeof(short));
+                var command = (Commands)(short)reader.ReadType(typeof(short))!;
                 if (!keyValuePairs.ContainsKey(command))
                 {
                     throw new Exception($"Command [{command}] was not found");
@@ -85,24 +85,24 @@ namespace TOP_Network.Converter
 
                 return result;
             }
-            catch (NotFullyReadException e)
+            catch (NotFullyReadException)
             {
-                throw e;
+                throw;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 if (reader.BaseStream.Position != packet.Size)
                 {
                     var missed = packet.Size - reader.BaseStream.Position;
                     reader.ReadBytes((int)missed);
                 }
-                throw e;
+                throw;
             }
         }
 
         public static object Read(this BinaryReader reader, Type type, Dictionary<PropertyInfo, object> values)
         {
-            Dictionary<PropertyInfo, object> test = new Dictionary<PropertyInfo, object>(values);
+            Dictionary<PropertyInfo, object> test = new(values);
             var entity = Activator.CreateInstance(type)!;
             var properties = type.GetProperties();
 
@@ -266,21 +266,7 @@ namespace TOP_Network.Converter
         }
 
         #region test
-        private static int convertToInt(object source)
-        {
-            BinaryFormatter bf = new BinaryFormatter();
-            using var ms = new MemoryStream();
-            bf.Serialize(ms, source);
-            var test = ms.ToArray();
-            byte[] target = new byte[4];
-            for (int i = 0; i < Math.Min(target.Length, test.Length); i++)
-            {
-                target[i] = test[i];
-            }
-            return BitConverter.ToInt32(target);
-        }
-
-        private static object ReadArry(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static object? ReadArry(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
             var res = reader.ReadType(info.PropertyType);
             if (res == null)
@@ -291,7 +277,7 @@ namespace TOP_Network.Converter
                 WhileAttribute? w = info.GetCustomAttribute<WhileAttribute>();
                 if (t != null)
                 {
-                    size = reader.ReadType(t.ReadType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null).GetHashCode();
+                    size = reader.ReadType(t.ReadType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null)!.GetHashCode();
                 }
                 else if(w != null)
                 {
@@ -303,7 +289,7 @@ namespace TOP_Network.Converter
                 }
                 else
                 {
-                    size = (byte)reader.ReadType(typeof(byte));
+                    size = (byte)reader.ReadType(typeof(byte))!;
                 }
                 var type = info.PropertyType.GetElementType()!;
                 Array value = Array.CreateInstance(type, size);

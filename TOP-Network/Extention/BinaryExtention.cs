@@ -7,12 +7,12 @@ namespace TOP_Network.Extention
 {
     public static class BinaryExtention
     {
-        public static T ReadType<T>(this BinaryReader reader) => (T)reader.ReadType(typeof(T));
+        public static T? ReadType<T>(this BinaryReader reader) => (T)reader.ReadType(typeof(T));
 
-        public static object ReadType(this BinaryReader reader, Type type, bool small = false)
+        public static object? ReadType(this BinaryReader reader, Type type, bool small = false)
         {
-            if (type == typeof(string))return reader.ReadString((short)reader.ReadType(typeof(short)));
-            if(type == typeof(byte[])) return reader.ReadBytes((short)reader.ReadType(typeof(short)));
+            if (type == typeof(string))return reader.ReadString((short)reader.ReadType(typeof(short))!);
+            if(type == typeof(byte[])) return reader.ReadBytes((short)reader.ReadType(typeof(short))!);
             if (type == typeof(DateTime)) return new DateTime(reader.ReadType<long>());
             if (type == typeof(bool)) return reader.ReadByte() == 1;
 

@@ -8,145 +8,139 @@ using TOP_Network.Exceptions;
 using TOP_Network.Packets;
 using TOP_Packets.Server;
 
-public class Program
+namespace PacketReverse
 {
-    public static async Task Main(string[] args)
+    public class Program
     {
-        t();
-        return;
-
-        PacketToClass.AddType<MissionLog>(Commands.CMD_MC_MISLOG);
-        PacketToClass.AddType<MissionPage>(Commands.CMD_MC_MISPAGE);
-        PacketToClass.AddType<MissionLogInfo>(Commands.CMD_MC_MISLOGINFO);
-        PacketToClass.AddType<NpcStateChange>(Commands.CMD_MC_NPCSTATECHG);
-        PacketToClass.AddType<FuncPage>(Commands.CMD_MC_FUNCPAGE);
-        PacketToClass.AddType<SystemInformation>(Commands.CMD_MC_SYSINFO);
-        PacketToClass.AddType<Notification>(Commands.CMD_MC_NOTIACTION);
-        PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
-        PacketToClass.AddType<CharacterBeginSee>(Commands.CMD_MC_CHABEGINSEE);
-
-        var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets").SelectMany(Directory.GetFiles).ToList();
-
-        int totalSize = files.Count;
-        int invalid = 0;
-        int notRead = 0;
-
-        while (files.Count > 0)
+        public static void Main(string[] args)
         {
-            if (files[0].Contains("CMD_MC_CHABEGINSEE"))
-            {
 
-            }
-            Console.Title = $"[{invalid}/{notRead}/{totalSize}]";
-            try
+            PacketToClass.AddType<MissionLog>(Commands.CMD_MC_MISLOG);
+            PacketToClass.AddType<MissionPage>(Commands.CMD_MC_MISPAGE);
+            PacketToClass.AddType<MissionLogInfo>(Commands.CMD_MC_MISLOGINFO);
+            PacketToClass.AddType<NpcStateChange>(Commands.CMD_MC_NPCSTATECHG);
+            PacketToClass.AddType<FuncPage>(Commands.CMD_MC_FUNCPAGE);
+            PacketToClass.AddType<SystemInformation>(Commands.CMD_MC_SYSINFO);
+            PacketToClass.AddType<Notification>(Commands.CMD_MC_NOTIACTION);
+            PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
+            PacketToClass.AddType<CharacterBeginSee>(Commands.CMD_MC_CHABEGINSEE);
+
+            var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets").SelectMany(Directory.GetFiles).ToList();
+
+            int totalSize = files.Count;
+            int invalid = 0;
+            int notRead = 0;
+
+            while (files.Count > 0)
             {
-                var pkt = new Packet(File.ReadAllBytes(files[0]));
-                var r = pkt.Convert();
-                // await Task.Delay(10);
-            }
-            catch(NotFullyReadException e)
-            {
-                notRead++;
-            }
-            catch(Exception e)
-            {
-                if (e.Message.Contains("CMD_MC"))
+                if (files[0].Contains("CMD_MC_CHABEGINSEE"))
                 {
 
                 }
-                //Console.WriteLine(e.Message);
-                invalid++;
-            }
-            // Console.WriteLine($"[{invalid}/{files.Count}/{totalSize}]");
-            files.RemoveAt(0);
-        }
-        Console.WriteLine($"[{invalid}/{notRead}/{totalSize}]");
-    }
-
-    static void t()
-    {
-        var t = Assembly.GetAssembly(typeof(FuncPage)).GetTypes();
-
-        var basePath = @"D:\dev\PKO-Wiki\Network\Packets";
-
-        List<string> shared = new List<string>();
-
-        foreach (var item in t.Where(x => x.IsAbstract).ToList())
-        {
-            List<string> data = new List<string>();
-
-
-            data.Add($"# {item.Name}");
-            data.Add("");
-
-            foreach (var imp in t.Where(x => x.BaseType == item))
-            {
-                data.Add($"## {imp.Name}");
-                data.Add("");
-
-                var properties = imp.GetProperties();
-                data.Add($"|Name|Type|Description|");
-                data.Add($"|---|---|---|");
-                foreach (var p in properties)
+                Console.Title = $"[{invalid}/{notRead}/{totalSize}]";
+                try
                 {
-                    var v = p.GetCustomAttribute<DescriptionAttribute>();
-                    string dsc = v != null ? $"{v.Description}" : "";
-                    if (p.PropertyType.Namespace.Contains("System"))
-                    {
-                        data.Add($"|{p.Name}|{p.PropertyType.Name}|{dsc}|");
-                    }
-                    else
-                    {
-                        data.Add($"|{p.Name}|[{p.PropertyType.Name}](./{p.PropertyType.Name}.md)|{dsc}|");
-                    }
+                    var pkt = new Packet(File.ReadAllBytes(files[0]));
+                    var r = pkt.Convert();
+                    // await Task.Delay(10);
                 }
-                data.Add("");
-                data.Add("");
-            }
+                catch (NotFullyReadException)
+                {
+                    notRead++;
+                }
+                catch (Exception e)
+                {
+                    if (e.Message.Contains("CMD_MC"))
+                    {
 
-            var pth = Path.Combine(basePath, "shared", item.Name + ".md");
-            File.WriteAllLines(pth, data);
+                    }
+                    //Console.WriteLine(e.Message);
+                    invalid++;
+                }
+                // Console.WriteLine($"[{invalid}/{files.Count}/{totalSize}]");
+                files.RemoveAt(0);
+            }
+            Console.WriteLine($"[{invalid}/{notRead}/{totalSize}]");
         }
 
-        foreach (var item in t.Where(x => !x.IsAbstract).ToList())
+        static void t()
         {
-            if (item.BaseType == typeof(object))
+            var t = Assembly.GetAssembly(typeof(FuncPage))!.GetTypes();
+
+            var basePath = @"D:\dev\PKO-Wiki\Network\Packets";
+
+            List<string> shared = [];
+
+            foreach (var item in t.Where(x => x.IsAbstract).ToList())
             {
-                List<string> data = new List<string>();
+                List<string> data = [$"# {item.Name}", ""];
 
-                data.Add($"# {item.Name}");
-                data.Add("");
-
-                var properties = item.GetProperties();
-                data.Add($"|Name|Type|Description|");
-                data.Add($"|---|---|---|");
-                foreach (var p in properties)
+                foreach (var imp in t.Where(x => x.BaseType == item))
                 {
-                    var v = p.GetCustomAttribute<DescriptionAttribute>();
-                    string dsc = v != null ? $"{v.Description}" : "";
-                    if (p.PropertyType.Namespace.Contains("System"))
+                    data.Add($"## {imp.Name}");
+                    data.Add("");
+
+                    var properties = imp.GetProperties();
+                    data.Add($"|Name|Type|Description|");
+                    data.Add($"|---|---|---|");
+                    foreach (var p in properties)
                     {
-                        data.Add($"|{p.Name}|{p.PropertyType.Name}|{dsc}|");
-                    }
-                    else
-                    {
-                        if (p.PropertyType.IsAbstract)
+                        var v = p.GetCustomAttribute<DescriptionAttribute>();
+                        string dsc = v != null ? $"{v.Description}" : "";
+                        if (p.PropertyType.Namespace!.Contains("System"))
                         {
-                            data.Add($"|{p.Name}|[{p.PropertyType.Name}](../shared/{p.PropertyType.Name.Replace("[]", "")}.md)|{dsc}|");
+                            data.Add($"|{p.Name}|{p.PropertyType.Name}|{dsc}|");
                         }
                         else
                         {
-                            data.Add($"|{p.Name}|[{p.PropertyType.Name}](./{p.PropertyType.Name.Replace("[]", "")}.md)|{dsc}|");
+                            data.Add($"|{p.Name}|[{p.PropertyType.Name}](./{p.PropertyType.Name}.md)|{dsc}|");
                         }
                     }
+                    data.Add("");
+                    data.Add("");
                 }
 
-                var pth = Path.Combine(basePath, "all", item.Name + ".md");
+                var pth = Path.Combine(basePath, "shared", item.Name + ".md");
                 File.WriteAllLines(pth, data);
             }
-            else
-            {
 
+            foreach (var item in t.Where(x => !x.IsAbstract).ToList())
+            {
+                if (item.BaseType == typeof(object))
+                {
+                    List<string> data = [$"# {item.Name}", ""];
+
+                    var properties = item.GetProperties();
+                    data.Add($"|Name|Type|Description|");
+                    data.Add($"|---|---|---|");
+                    foreach (var p in properties)
+                    {
+                        var v = p.GetCustomAttribute<DescriptionAttribute>();
+                        string dsc = v != null ? $"{v.Description}" : "";
+                        if (p.PropertyType.Namespace!.Contains("System"))
+                        {
+                            data.Add($"|{p.Name}|{p.PropertyType.Name}|{dsc}|");
+                        }
+                        else
+                        {
+                            if (p.PropertyType.IsAbstract)
+                            {
+                                data.Add($"|{p.Name}|[{p.PropertyType.Name}](../shared/{p.PropertyType.Name.Replace("[]", "")}.md)|{dsc}|");
+                            }
+                            else
+                            {
+                                data.Add($"|{p.Name}|[{p.PropertyType.Name}](./{p.PropertyType.Name.Replace("[]", "")}.md)|{dsc}|");
+                            }
+                        }
+                    }
+
+                    var pth = Path.Combine(basePath, "all", item.Name + ".md");
+                    File.WriteAllLines(pth, data);
+                }
+                else
+                {
+
+                }
             }
         }
     }
