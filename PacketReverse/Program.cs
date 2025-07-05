@@ -6,6 +6,8 @@ using TOP_Network.Converter;
 using TOP_Network.Enum;
 using TOP_Network.Exceptions;
 using TOP_Network.Packets;
+using TOP_Packets;
+using TOP_Packets.Client;
 using TOP_Packets.Server;
 
 namespace PacketReverse
@@ -14,18 +16,10 @@ namespace PacketReverse
     {
         public static void Main(string[] args)
         {
+            ServerSideRegister.Register();
+            ClientSideRegister.Register();
 
-            PacketToClass.AddType<MissionLog>(Commands.CMD_MC_MISLOG);
-            PacketToClass.AddType<MissionPage>(Commands.CMD_MC_MISPAGE);
-            PacketToClass.AddType<MissionLogInfo>(Commands.CMD_MC_MISLOGINFO);
-            PacketToClass.AddType<NpcStateChange>(Commands.CMD_MC_NPCSTATECHG);
-            PacketToClass.AddType<FuncPage>(Commands.CMD_MC_FUNCPAGE);
-            PacketToClass.AddType<SystemInformation>(Commands.CMD_MC_SYSINFO);
-            PacketToClass.AddType<Notification>(Commands.CMD_MC_NOTIACTION);
-            PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
-            PacketToClass.AddType<CharacterBeginSee>(Commands.CMD_MC_CHABEGINSEE);
-
-            var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\packets").SelectMany(Directory.GetFiles).ToList();
+            var files = Directory.GetDirectories(@"D:\dev\DecryptFinal\DecryptFinal\bin\Debug\net8.0\").SelectMany(Directory.GetFiles).Where(x => x.EndsWith(".packet")).ToList();
 
             int totalSize = files.Count;
             int invalid = 0;
@@ -37,11 +31,46 @@ namespace PacketReverse
                 {
 
                 }
-                Console.Title = $"[{invalid}/{notRead}/{totalSize}]";
+                Console.Title = $"[{invalid}/{notRead}/{totalSize - (invalid + notRead)}]";
+                var pkt = new Packet(File.ReadAllBytes(files[0]));
+                if(pkt.Command == Commands.CMD_MC_HELPINFO)
+                {
+
+                }
+
                 try
                 {
-                    var pkt = new Packet(File.ReadAllBytes(files[0]));
+                    if (pkt.Command == Commands.CMD_MC_NEWCHA)
+                    {
+
+                    }
                     var r = pkt.Convert();
+
+                    LoginAccount account = null;
+
+                    if (pkt.Command == Commands.CMD_MC_LOGIN)
+                    {
+                        var lr = (LoginResponse)r;
+                        account = lr.Accounts[0];
+                        Console.WriteLine(BitConverter.ToString(lr.ChatKey));
+                    }
+                    else if (pkt.Command == Commands.CMD_MC_ENDPLAY)
+                    {
+                        var lr = (EndPlay)r;
+                        account = lr.Accounts[0];
+                    }
+                    if(account != null)
+                    {
+                        var links = account._Look.Links;
+                    }
+                    if (pkt.Command == Commands.CMD_MC_NOTIACTION)
+                    {
+
+                    }
+
+
+
+                    notRead++;
                     // await Task.Delay(10);
                 }
                 catch (NotFullyReadException)
@@ -50,9 +79,9 @@ namespace PacketReverse
                 }
                 catch (Exception e)
                 {
-                    if (e.Message.Contains("CMD_MC"))
+                    if (e.Message.Contains("CMD_"))
                     {
-
+                        // Console.WriteLine(pkt.Size + "\t| " + e.Message);
                     }
                     //Console.WriteLine(e.Message);
                     invalid++;

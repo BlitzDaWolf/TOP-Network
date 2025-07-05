@@ -42,6 +42,10 @@ namespace TOP_Packets
 
             PacketToClass.AddType<CharacterEndSee>(Commands.CMD_MC_CHAENDSEE);
             PacketToClass.AddType<ItemEndSee>(Commands.CMD_MC_ITEMENDSEE);
+
+            PacketToClass.AddType<Password2Resp>(Commands.CMD_MC_CREATE_PASSWORD2);
+            PacketToClass.AddType<Password2Resp>(Commands.CMD_MC_UPDATE_PASSWORD2);
+            PacketToClass.AddType<EndAction>(Commands.CMD_CM_ENDACTION);
         }
     }
 }

@@ -33,8 +33,7 @@ namespace TOP_Network.Converter
             Dictionary<PropertyInfo, object> values = new();
 
             using var reader = packet.GetBitReader();
-            reader.ReadType(typeof(int));
-            reader.ReadType(typeof(int));
+            reader.ReadBytes(Packet.StartSize + 4);
 
             var command = (Commands)(short)reader.ReadType(typeof(short));
             T result;
@@ -45,7 +44,7 @@ namespace TOP_Network.Converter
                 {
                     var h = packet.DisplayHex();
                     var missed = packet.Size - packet.GetStream().Position;
-                    throw new NotFullyReadException(result);
+                    // throw new NotFullyReadException(result);
                 }
 
                 return result;
@@ -105,6 +104,9 @@ namespace TOP_Network.Converter
             Dictionary<PropertyInfo, object> test = new(values);
             var entity = Activator.CreateInstance(type)!;
             var properties = type.GetProperties();
+
+            if (properties.Length == 0)
+                return null;
 
             foreach (var item in properties)
             {
@@ -299,6 +301,10 @@ namespace TOP_Network.Converter
                     for (short i = 0; i < size; i++)
                     {
                         var r = reader.Read(type, values);
+                        if(r == null)
+                        {
+                            r = reader.ReadSingle(info, values);
+                        }
                         value.SetValue(r, i);
                     }
                 }
@@ -325,6 +331,11 @@ namespace TOP_Network.Converter
             {
                 var result = reader.ReadType(info.GetCustomAttribute<ReadTypeAttribute>().ReadType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
                 return result;
+            }
+            if(info.PropertyType.IsArray)
+            {
+                var type = info.PropertyType.GetElementType()!;
+                return reader.ReadType(type, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
             }
 
             var res = reader.ReadType(info.PropertyType, info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);

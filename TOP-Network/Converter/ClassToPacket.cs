@@ -6,8 +6,6 @@ using TOP_Network.Exceptions;
 using TOP_Network.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
-using TOP_Records.Tables;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace TOP_Network.Converter
 {
@@ -19,11 +17,18 @@ namespace TOP_Network.Converter
             Dictionary<PropertyInfo, object> values = [];
 
             Packet packet = new();
-            packet.Init(new byte[4096]);
+            packet.Init(new byte[4096*4]);
             using BinaryWriter writer = packet.GetBitWriter();
             writer.BaseStream.Position = 0;
 
-            writer.WriteType(50);
+            if (Packet.LongSize)
+            {
+                writer.WriteType(50);
+            }
+            else
+            {
+                writer.WriteType((short)50);
+            }
             writer.WriteType(-2147483648);
             writer.WriteType((short)command);
 
@@ -31,9 +36,25 @@ namespace TOP_Network.Converter
 
             var size = (int)packet.GetStream().Position;
             packet.GetStream().Position = 0;
-            writer.WriteType(size);
+
+            if (Packet.LongSize)
+            {
+                writer.WriteType(size);
+            }
+            else
+            {
+                writer.WriteType((short)size);
+            }
 
             return packet.Clone();
+        }
+
+        public static Packet Convert(this object entity)
+        {
+            var c = entity.GetType().GetCustomAttribute<DefaultCommandAttribute>();
+            if (c == null) throw new Exception("No default command has been found");
+
+            return Convert(entity, c.Command);
         }
 
         private static void WriteData(this BinaryWriter writer, object entity, Dictionary<PropertyInfo, object> values)
@@ -145,7 +166,7 @@ namespace TOP_Network.Converter
 
         private static void WriteSingle(this BinaryWriter writer, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
-            if (!writer.WriteType(values[info]))
+            if (!writer.WriteType(values[info], info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null))
             {
                 writer.WriteData(values[info], values);
             }
@@ -180,7 +201,7 @@ namespace TOP_Network.Converter
                     if (While != null)
                     {
                         var v = arr.GetValue(i);
-                        if(v == null)
+                        if (v == null)
                         {
                             writeFalse = true;
                         }
@@ -192,7 +213,16 @@ namespace TOP_Network.Converter
                     }
                     else
                     {
-                        writer.WriteData(arr.GetValue(i)!, values);
+                        var t = arr.GetValue(i);
+                        if (t.GetType().GetProperties().Length == 0)
+                        {
+                            writer.WriteType(arr.GetValue(i), info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null);
+                            // writer.WriteSingle(info, values);
+                        }
+                        else
+                        {
+                            writer.WriteData(arr.GetValue(i)!, values);
+                        }
                     }
                 }
                 if (writeFalse)

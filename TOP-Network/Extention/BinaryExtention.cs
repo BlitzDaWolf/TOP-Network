@@ -43,7 +43,7 @@ namespace TOP_Network.Extention
         }
 
 
-        public static bool WriteType(this BinaryWriter writer, object value)
+        public static bool WriteType(this BinaryWriter writer, object value, bool small = false)
         {
             var start = writer.BaseStream.Position;
 
@@ -130,9 +130,12 @@ namespace TOP_Network.Extention
             return true;
         }
 
-        public static void WriteBytes(this BinaryWriter writer, byte[] data)
+        public static void WriteBytes(this BinaryWriter writer, byte[] data, bool small = false)
         {
-            writer.Write(data.Reverse().ToArray());
+            if (small)
+                writer.Write(data.Reverse().ToArray());
+            else
+                writer.Write(data.Reverse().ToArray());
         }
     }
 }

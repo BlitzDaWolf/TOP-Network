@@ -19,6 +19,10 @@ namespace TOP_Packets
             PacketToClass.AddType<ClientSay>(Commands.CMD_CM_SAY);
             PacketToClass.AddType<Ping>(Commands.CMD_CP_PING);
             PacketToClass.AddType<SessionSay>(Commands.CMD_CP_SESS_SAY);
+
+            PacketToClass.AddType<Password2>(Commands.CMD_CM_CREATE_PASSWORD2);
+            PacketToClass.AddType<Password2>(Commands.CMD_CM_UPDATE_PASSWORD2);
+            PacketToClass.AddType<NewCharacter>(Commands.CMD_CM_NEWCHA);
         }
     }
 }
