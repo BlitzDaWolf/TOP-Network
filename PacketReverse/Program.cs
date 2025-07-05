@@ -61,7 +61,7 @@ namespace PacketReverse
                     }
                     if(account != null)
                     {
-                        var links = account._Look.Links;
+                        // var links = account..Links;
                     }
                     if (pkt.Command == Commands.CMD_MC_NOTIACTION)
                     {
