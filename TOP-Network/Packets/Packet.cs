@@ -13,7 +13,7 @@ namespace TOP_Network.Packets
         public bool ValidGnack => gnack == 128;
         private Stream? _stream { get; set; }
 
-        public uint gnack => BitConverter.ToUInt32(Data.Skip(StartSize).Take(4).Reverse().ToArray());
+        public uint gnack => BitConverter.ToUInt32(Data.Skip(StartSize).Take(4).ToArray());
         public int Size => LongSize? BitConverter.ToInt32(Data.Take(StartSize).Reverse().ToArray(), 0): BitConverter.ToInt16(Data.Take(StartSize).Reverse().ToArray(), 0);
         public Commands Command => (Commands)BitConverter.ToInt16(Data.Skip(StartSize+4).Take(2).Reverse().ToArray());
 
@@ -22,7 +22,7 @@ namespace TOP_Network.Packets
 
         public void Init(byte[] data)
         {
-            //if (data.Length < 10) throw new Exception("Not enough data to be a valid packet");
+            if (data.Length < 6 + StartSize) throw new Exception("Not enough data to be a valid packet");
             Data = data;
             _stream = new MemoryStream(Data, true);
             _stream.Position = 0;
