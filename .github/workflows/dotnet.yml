@@ -36,4 +36,4 @@ jobs:
       run: dotnet build --no-restore --property WarningLevel=0
     - name: Test
       working-directory: ./TOP-Network
-      run: dotnet test --no-build --verbosity normal --property WarningLevel=0
+      run: dotnet test --no-build --verbosity normal
