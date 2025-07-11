@@ -30,10 +30,10 @@ jobs:
         dotnet-version: 8.0.x
     - name: Restore dependencies
       working-directory: ./TOP-Network
-      run: dotnet restore
+      run: dotnet restore --property WarningLevel=0
     - name: Build
       working-directory: ./TOP-Network
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore --property WarningLevel=0
     - name: Test
       working-directory: ./TOP-Network
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal --property WarningLevel=0
