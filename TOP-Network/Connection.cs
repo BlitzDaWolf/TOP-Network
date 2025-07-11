@@ -80,6 +80,7 @@ public class Connection
 
     private async Task handelPacket(Packet pkt)
     {
+        Console.WriteLine("A new packet arived: " + pkt.gnack);
         if (called.ContainsKey(pkt.gnack))
         {
             called[pkt.gnack] = pkt;
@@ -97,9 +98,12 @@ public class Connection
         await stream!.FlushAsync();
     }
 
+    public uint packet { get; private set; } = 0;
+
     public async Task<Packet?> SyncCall(Packet pkt, int timeout = 10_000)
     {
-        pkt.AddRandomGnack();
+        // pkt.AddRandomGnack();
+        pkt.WriteNewGnack(++packet);
         uint test = pkt.gnack + 2147483648;
 
         await Send(pkt);
