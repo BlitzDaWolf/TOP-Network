@@ -81,12 +81,12 @@ namespace PacketReverse
                 {
                     if (e.Message.Contains("CMD_"))
                     {
-                        // Console.WriteLine(pkt.Size + "\t| " + e.Message);
+                        // Logging.LogInfo(pkt.Size + "\t| " + e.Message);
                     }
-                    //Console.WriteLine(e.Message);
+                    //Logging.LogInfo(e.Message);
                     invalid++;
                 }
-                // Console.WriteLine($"[{invalid}/{files.Count}/{totalSize}]");
+                // Logging.LogInfo($"[{invalid}/{files.Count}/{totalSize}]");
                 files.RemoveAt(0);
             }
             Console.WriteLine($"[{invalid}/{notRead}/{totalSize}]");

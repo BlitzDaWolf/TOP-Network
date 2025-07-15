@@ -1,5 +1,4 @@
-﻿using System.Text;
-using TOP_Network.Enum;
+﻿using TOP_Network.Enum;
 using TOP_Network.Extention;
 
 namespace TOP_Network.Packets
@@ -14,7 +13,7 @@ namespace TOP_Network.Packets
         private Stream? _stream { get; set; }
 
         public uint gnack => BitConverter.ToUInt32(Data.Skip(StartSize).Take(4).Reverse().ToArray());
-        public int Size => LongSize? BitConverter.ToInt32(Data.Take(StartSize).Reverse().ToArray(), 0): BitConverter.ToInt16(Data.Take(StartSize).Reverse().ToArray(), 0);
+        public int Size => (int)(LongSize? BitConverter.ToUInt32(Data.Take(StartSize).Reverse().ToArray(), 0): BitConverter.ToUInt16(Data.Take(StartSize).Reverse().ToArray(), 0));
         public Commands Command => (Commands)BitConverter.ToInt16(Data.Skip(StartSize+4).Take(2).Reverse().ToArray());
 
         public Packet() { }
@@ -29,8 +28,34 @@ namespace TOP_Network.Packets
         }
 
         public Stream GetStream() => _stream ?? throw new Exception("The packet has not been initialized");
-        public BinaryReader GetBitReader() => new PacketReader(GetStream());
-        public BinaryWriter GetBitWriter() => new BinaryWriter(GetStream());
+
+        private BinaryReader _reader;
+        private BinaryWriter _writter;
+
+        public BinaryReader GetBitReader()
+        {
+            if (_reader==null) _reader = new PacketReader(GetStream());
+            if (!_stream.CanWrite)
+            {
+                _stream = new MemoryStream(Data, true);
+                _stream.Position = Size;
+                _reader = new PacketReader(GetStream());
+            }
+            return _reader;
+        }
+        public BinaryWriter GetBitWriter() {
+            if(_writter==null) _writter = new BinaryWriter(GetStream());
+            if (!_stream.CanWrite)
+            {
+                _stream = new MemoryStream(Data, true);
+                _stream.Position = Size;
+                _writter = new BinaryWriter(_stream);
+            }
+            return _writter;
+        }
+
+        // public BinaryReader GetBitReader() => new PacketReader(GetStream());
+        // public BinaryWriter GetBitWriter() => new BinaryWriter(GetStream());
 
         public void WriteSize(int size)
         {
@@ -60,13 +85,28 @@ namespace TOP_Network.Packets
             reader.BaseStream.Position = currentPos;
         }
 
-        public Packet Clone()
+        public void WriteCMD(Commands command)
+        {
+            using var writer = GetBitWriter();
+            var current = writer.BaseStream.Position;
+            writer.BaseStream.Position = 4 + StartSize;
+
+            writer.WriteType((short)command);
+
+            writer.BaseStream.Position = current;
+        }
+
+        public virtual Packet Clone()
         {
             return new Packet(Data.Take(Size).ToArray());
         }
 
         public void RemoveLast(int size)
         {
+            for (int i = this.Size - size; i < this.Size; i++)
+            {
+                Data[i] = 0;
+            }
             WriteSize(this.Size - size);
         }
 
@@ -89,6 +129,17 @@ namespace TOP_Network.Packets
         {
             var v = Data.TakeLast(4).Reverse().ToArray();
             return BitConverter.ToInt32(v);
+        }
+
+        public void Final()
+        {
+            if (_reader != null) _reader.Close();
+            if (_writter != null) _writter.Close();
+            if (_stream != null) _stream.Close();
+
+            _reader = null;
+            _writter = null;
+            _stream = null;
         }
     }
 }
