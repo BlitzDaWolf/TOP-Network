@@ -138,7 +138,7 @@ public abstract class Connection
         }
         catch(Exception e)
         {
-            // Logging.LogInfo(e);
+            Logging.LogError(e);
         }
         finally
         {
@@ -174,7 +174,9 @@ public abstract class Connection
     public async Task Send(Packet pkt, int conenction = 0)
     {
         if (pkt.Size >= 10)
-            Logging.LogInfo($"Sending: [{pkt.Size}]");
+        {
+            Logging.LogInfo($"Sending: [{pkt.Size}][{pkt.Command}]");
+        }
         await sockets[conenction]!.WriteAsync(pkt.Data, 0, (int)pkt.Size);
         await sockets[conenction]!.FlushAsync();
         pkt.Final();

@@ -1,5 +1,7 @@
-﻿using TOP_Network.Enum;
+﻿using System.Drawing;
+using TOP_Network.Enum;
 using TOP_Network.Extention;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TOP_Network.Packets
 {
@@ -62,38 +64,36 @@ namespace TOP_Network.Packets
             using var writer = GetBitWriter();
             var currentPos = writer.BaseStream.Position;
 
-            writer.BaseStream.Position = 0;
+            byte[] data = new byte[0];
+
+            // writer.BaseStream.Position = 0;
             if (LongSize)
             {
-                writer.WriteType(size);
+                data = BitConverter.GetBytes(size);
             }
             else
             {
-                writer.WriteType((short)size);
+                data = BitConverter.GetBytes((short)size);
             }
+
+            data = data.Reverse().ToArray();
+            for (int i = 0; i < data.Length; i++) this.Data[i] = data[i];
             // writer.WriteType(LongSize ? size : (short)size);
 
-            writer.BaseStream.Position = currentPos;
+            Logging.LogInfo(Command);
+            writer.BaseStream.Position = size;
         }
 
         public void WriteNewGnack(uint gnac)
         {
-            using var reader = GetBitWriter();
-            var currentPos = reader.BaseStream.Position;
-            reader.BaseStream.Position = StartSize;
-            reader.WriteType(gnac);
-            reader.BaseStream.Position = currentPos;
+            var data = BitConverter.GetBytes(gnac).Reverse().ToArray();
+            for (int i = 0; i < data.Length; i++) this.Data[StartSize+ i] = data[i];
         }
 
         public void WriteCMD(Commands command)
         {
-            using var writer = GetBitWriter();
-            var current = writer.BaseStream.Position;
-            writer.BaseStream.Position = 4 + StartSize;
-
-            writer.WriteType((short)command);
-
-            writer.BaseStream.Position = current;
+            var data = BitConverter.GetBytes((short)command).Reverse().ToArray();
+            for (int i = 0; i < data.Length; i++) this.Data[StartSize + i+4] = data[i];
         }
 
         public virtual Packet Clone()
