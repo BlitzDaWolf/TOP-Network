@@ -11,7 +11,7 @@ namespace TOP_Network.Packets
         public static int StartSize => LongSize ? 4 : 2;
 
         public byte[] Data { get; set; } = new byte[0];
-        public bool ValidGnack => gnack == 128;
+        public bool ValidGnack => gnack == 2147483648;
         private Stream? _stream { get; set; }
 
         public uint gnack => BitConverter.ToUInt32(Data.Skip(StartSize).Take(4).Reverse().ToArray());
