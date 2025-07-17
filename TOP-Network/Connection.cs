@@ -175,7 +175,7 @@ public abstract class Connection
     {
         if (pkt.Size >= 10)
         {
-            Logging.LogInfo($"Sending: [{pkt.Size}][{pkt.Command}]");
+            Logging.LogInfo($"Sending: [{pkt.Size}]");
         }
         await sockets[conenction]!.WriteAsync(pkt.Data, 0, (int)pkt.Size);
         await sockets[conenction]!.FlushAsync();
@@ -210,7 +210,6 @@ public abstract class Connection
 
     public async void SendToAll(Packet packet)
     {
-        Logging.LogInfo(packet.DisplayHex());
         for (int i = 0; i < sockets.Length; i++)
         {
             if (sockets[i] != null)

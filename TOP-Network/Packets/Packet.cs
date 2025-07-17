@@ -64,9 +64,8 @@ namespace TOP_Network.Packets
             using var writer = GetBitWriter();
             var currentPos = writer.BaseStream.Position;
 
-            byte[] data = new byte[0];
+            byte[] data = [];
 
-            // writer.BaseStream.Position = 0;
             if (LongSize)
             {
                 data = BitConverter.GetBytes(size);
@@ -78,9 +77,6 @@ namespace TOP_Network.Packets
 
             data = data.Reverse().ToArray();
             for (int i = 0; i < data.Length; i++) this.Data[i] = data[i];
-            // writer.WriteType(LongSize ? size : (short)size);
-
-            Logging.LogInfo(Command);
             writer.BaseStream.Position = size;
         }
 
