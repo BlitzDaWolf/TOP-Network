@@ -51,7 +51,7 @@ namespace TOP_Network.Converter
             }
             catch (Exception)
             {
-                Console.WriteLine(packet.DisplayHex());
+                Logging.LogInfo(packet.DisplayHex());
                 throw;
             }
         }

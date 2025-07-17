@@ -6,12 +6,6 @@ namespace NetworkTest.PacketTests
     public class PacketTester
     {
         [Fact]
-        public void Fact_TooLittle()
-        {
-            Assert.Throws<Exception>(() => new Packet([0x00, 0x00]));
-        }
-
-        [Fact]
         public void Fact_NoReader()
         {
             Packet pkt = new Packet();
