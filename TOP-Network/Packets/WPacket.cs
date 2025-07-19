@@ -8,6 +8,11 @@ public class WPacket : Packet
     {
         GetStream().Position = StartSize + 6;
     }
+    public WPacket(Packet pk) : this()
+    {
+        GetStream().Position = 0;
+        GetBitWriter().WriteBytes(pk.GetData());
+    }
 
     public void WriteLong(int value)
     {
@@ -22,6 +27,7 @@ public class WPacket : Packet
 
     public void WriteString(string value)
     {
+        if (value.Length == 0) value += "\0";
         if (value.Last() != 0x00) value += '\0';
         base.GetBitWriter().WriteType(value);
         // WriteSeq(value.Select(x => (byte)x).ToArray());

@@ -137,5 +137,7 @@ namespace TOP_Network.Packets
             _writter = null;
             _stream = null;
         }
+
+        public byte[] GetData() => Data.Take(Size).ToArray();
     }
 }
