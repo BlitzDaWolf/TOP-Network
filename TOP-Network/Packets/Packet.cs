@@ -31,21 +31,34 @@ namespace TOP_Network.Packets
 
         public Stream GetStream() => _stream ?? throw new Exception("The packet has not been initialized");
 
-        private BinaryReader _reader;
-        private BinaryWriter _writter;
+        private BinaryReader? _reader;
+        private BinaryWriter? _writter;
 
         public BinaryReader GetBitReader()
         {
-            if (_reader==null) _reader = new PacketReader(GetStream());
-            if (!_stream.CanWrite)
+            if (_stream == null)
             {
                 _stream = new MemoryStream(Data, true);
-                _stream.Position = Size;
+                _stream.Position = 6+Packet.StartSize;
+                _reader = new PacketReader(GetStream());
+            }
+            if (_reader == null) _reader = new PacketReader(GetStream());
+            if (!_stream.CanWrite)
+            {
+                var currentPosition = _stream.CanSeek? _stream.Position : 6 + Packet.StartSize;
+                _stream = new MemoryStream(Data, true);
+                _stream.Position = currentPosition;
                 _reader = new PacketReader(GetStream());
             }
             return _reader;
         }
         public BinaryWriter GetBitWriter() {
+            if (_stream == null)
+            {
+                _stream = new MemoryStream(Data, true);
+                _stream.Position = Size;
+                _writter = new BinaryWriter(_stream);
+            }
             if(_writter==null) _writter = new BinaryWriter(GetStream());
             if (!_stream.CanWrite)
             {
@@ -97,16 +110,17 @@ namespace TOP_Network.Packets
             return new Packet(Data.Take(Size).ToArray());
         }
 
-        public void RemoveLast(int size)
+        public virtual void RemoveLast(int size)
         {
             for (int i = this.Size - size; i < this.Size; i++)
             {
                 Data[i] = 0;
             }
+            Data =Data.Take(this.Size - size).ToArray();
             WriteSize(this.Size - size);
         }
 
-        public string DisplayHex() => $"{BitConverter.ToString(Data.Take(Size).ToArray()).Replace("-", " ")}";
+        public string DisplayHex() => /*Display(); =>*/ $"{BitConverter.ToString(Data.Take(Size).ToArray()).Replace("-", " ")}";
 
         public void Save(string Path)
         {
@@ -138,6 +152,36 @@ namespace TOP_Network.Packets
             _stream = null;
         }
 
+        public string Display()
+        {
+            var res = "";
+            var data = Data.Take(Size).ToList();
+            var rest = data.Count % 16;
+            for (int i = 0; i < rest; i++) data.Add(0);
+            for (int i = 0; i < data.Count / 16; i++)
+            {
+                var l = data.Skip(i * 16).Take(16).ToArray();
+                var r = string.Join("", l.Select(x => x >= 0x20 && x <= 0x7d ? (char)x : '.'));
+                res += "\n" + BitConverter.ToString(l).Replace("-", " ") + "\t" + r;
+            }
+            return res;
+        }
+
         public byte[] GetData() => Data.Take(Size).ToArray();
+
+        public static string Diffrence(WPacket wpk, Packet pkt)
+        {
+            string res = "";
+            var size = Math.Min(wpk.Size, pkt.Size);
+            for (int i = 0; i < size / 16; i++)
+            {
+                var l = wpk.Data.Skip(i*16).Take(16).ToArray();
+                var r = pkt.Data.Skip(i*16).Take(16).ToArray();
+
+                var d = l.Select((x, i) => (byte)(x ^ r[i])).ToArray();
+                res += "\n" + BitConverter.ToString(d);
+            }
+            return res;
+        }
     }
 }

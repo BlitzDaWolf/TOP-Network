@@ -52,6 +52,12 @@ public static class Logging
         Write(Value, LogLevels.Info, args);
     }
 
+    public static void LogInfo(string Value)
+    {
+        Console.ForegroundColor = ConsoleColor.White;
+        Write(Value.Replace("{", "*"), LogLevels.Info);
+    }
+
     public static void LogTodo(object v)
     {
 #if DEBUG
