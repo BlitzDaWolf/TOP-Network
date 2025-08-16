@@ -1,15 +1,92 @@
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
 using System.Net.Sockets;
 using TOP_Network.Packets;
+using TOP_Utils;
 
 namespace TOP_Network;
 
+public class NetworkBuffer
+{
+    List<byte> data = new List<byte>();
+
+    private int ToRemove = 0;
+    private int Remaining => data.Count - ToRemove;
+    public bool EOF => Remaining == 0;
+
+    public void SafeStep()
+    {
+        using var stepActiveit = this.StartActivity("safeStep");
+        stepActiveit?.SetTag("remove", ToRemove);
+        lock (data)
+        {
+            data.RemoveRange(0, ToRemove);
+        }
+        ToRemove = 0;
+    }
+
+    public byte[] ReadBuffer(int size)
+    {
+        if (Remaining < size) return Array.Empty<byte>();
+        var buff = data.Skip(ToRemove).Take(size).ToArray();
+        ToRemove += size;
+        return buff;
+    }
+
+    public byte[] ReadAll()
+    {
+        return ReadBuffer(data.Count - ToRemove);
+    }
+
+    public byte[] Peek(int size) => data.Skip(ToRemove).Take(size).ToArray();
+
+    public Packet ReadPacket()
+    {
+        var p = Peek(Packet.StartSize).Reverse().ToArray();
+        if (p.Length < Packet.StartSize) return new Packet(new byte[Packet.StartSize]);
+        int sz = Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
+        if (sz < Packet.StartSize)return new Packet(new byte[Packet.StartSize]);
+        if(Remaining < sz)return new Packet(new byte[Packet.StartSize]);
+        return new Packet(ReadBuffer(sz));
+    }
+
+    public void AddData(IEnumerable<byte> data)
+    {
+        this.data.AddRange(data);
+    }
+
+    public void AddData(Packet pkt)
+    {
+        AddData(pkt.GetData());
+        pkt.Final();
+    }
+}
+
+public struct NetworkConnection
+{
+    public TcpClient Client { get; set; }
+    public NetworkStream Stream { get; set; }
+    public NetworkBuffer SendBuffer { get; set; }
+    public NetworkBuffer ReciveBuffer { get; set; }
+
+    public void Close()
+    {
+        Stream.Close();
+        Client.Close();
+    }
+}
+
 public abstract class Connection
 {
-    private TcpClient?[] connections;
-    private NetworkStream?[] sockets;
+    public bool IsServer { get; set; }
+    public bool SendTrace { get; set; } = true;
+    public string IP { get; private set; } = "";
+    public int Port { get; private set; }
+
+
+    private NetworkConnection?[] connections;
+    // private TcpClient?[] connections;
+    // private NetworkStream?[] sockets;
     // TcpClient? tcpClient;
     // NetworkStream? stream;
 
@@ -17,31 +94,53 @@ public abstract class Connection
 
     public Connection(int maxConnections = 10)
     {
-        connections = new TcpClient[maxConnections];
-        sockets = new NetworkStream[maxConnections];
+        connections = new NetworkConnection?[maxConnections];
+        // connections = new TcpClient[maxConnections];
+        // sockets = new NetworkStream[maxConnections];
     }
 
-    public void Init()
+    public void Init(string IP = "", int port = 0)
     {
-        Start();
+        if (string.IsNullOrEmpty(IP) || port <= 0)
+        {
+            Logging.LogError("No valid IP or port was given");
+            return;
+        }
+
+        this.IP = IP;
+        this.Port = port;
+
+        Thread t = new Thread(Start);
+        t.Start();
     }
 
     public virtual void Start() { }
 
     public async Task KeepAlive()
     {
-        /*Packet p = new Packet(new byte[]{ 0x00, 0x02 });
-        while (tcpClient != null && tcpClient.Connected)
+        Packet p = new Packet(new byte[]{ 0x00, 0x02 });
+        while (true)
         {
             await Task.Delay(2000);
-            // await Send(p);
-            await stream.WriteAsync(p.Data, 0, p.Size);
-            await stream.FlushAsync();
-        }*/
+            foreach (var a in connections)
+            {
+                var stream = a.Value.Stream;
+                // await Send(p);
+                await stream.WriteAsync(p.Data, 0, p.Size);
+                await stream.FlushAsync();
+            }
+        }
+    }
+
+    public void Disconect(int socket = 0)
+    {
+        if (connections[socket] == null) return;
+        connections[socket]!.Value.Close();
     }
 
     public async Task ConnectAsClient(string IP, int port)
     {
+        var kal = KeepAlive();
         TcpClient client = new TcpClient(IP, port);
         await connect(client);
     }
@@ -53,16 +152,25 @@ public abstract class Connection
     /// <param name="port">Listen port</param>
     public async Task RunAsSingleServer(IPAddress listen, int port)
     {
-        TcpListener listener = new TcpListener(listen, port);
-        listener.Start();
-
-        Logging.LogImportant($"Listening on: {listen}:{port}");
-
-        while (true)
+        IsServer = true;
+        try
         {
-            TcpClient GroupServer = listener.AcceptTcpClient();
-            _ = Task.Run(() => connect(GroupServer));
-            Logging.LogInfo("Client connected");
+            TcpListener listener = new TcpListener(listen, port);
+            listener.Start();
+
+            Logging.LogImportant($"Listening on: {listen}:{port}");
+
+            while (true)
+            {
+                TcpClient GroupServer = listener.AcceptTcpClient();
+                _ = Task.Run(() => connect(GroupServer));
+                Logging.LogInfo("Client connected");
+            }
+        }
+        catch (Exception e)
+        {
+            Logging.LogError($"Error for listening: {listen}:{port}");
+            Logging.LogError(e);
         }
     }
 
@@ -79,113 +187,259 @@ public abstract class Connection
     public async Task connect(TcpClient groupServer)
     {
         int empty = FindEmpty();
-        if(empty == -1)
+        if (empty == -1)
         {
             Logging.LogInfo("Max connections reached");
             groupServer.Close();
             return;
         }
-        connections[empty] = groupServer;
-        sockets[empty] = groupServer.GetStream();
-
-        // var kal = KeepAlive();
+        var con = new NetworkConnection
+        {
+            Client = groupServer,
+            Stream = groupServer.GetStream(),
+            ReciveBuffer = new NetworkBuffer(),
+            SendBuffer = new NetworkBuffer()
+        };
+        connections[empty] = con;
 
         try
         {
-            var _ = OnConnected();
-            bool IsTransaction = false;
-
-            List<byte> allData = new List<byte>();
-
-            byte[] buffer = new byte[32_768];
-            int bytesRead = 0;
-            while  ((bytesRead = await sockets[empty]!.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            using (var onConnection = this.StartActivity("OnConnecting"))
             {
-                // bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-                if (IsTransaction)
-                {
-                    allData.AddRange(buffer);
-                }
-                else
-                {
-                    var t = new List<byte>(buffer.Take(bytesRead));
-                    List<Packet> packets = new List<Packet>();
-                    while(t.Count > 1)
-                    {
-                        var packetSize = new Packet(t.Take(Packet.StartSize).ToArray());
-                        if(packetSize.Size == 0)
-                        {
-                            t.RemoveRange(0, 1);
-                            continue;
-                        }
-                        if(packetSize.Size < 8 || t.Count < 8)
-                        {
-                            // Check
-                            if(packetSize.Size == Packet.StartSize)
-                            {
-                                await Send(packetSize, empty);
-                            }
-                            t.RemoveRange(0, 1);
-                            continue;
-                        }
-                        packets.Add(new Packet(t.Take(packetSize.Size).ToArray()));
-                        t.RemoveRange(0, packetSize.Size);
-                    }
-                    Task.WaitAll(packets.Select(x=>handelPacket(x, empty)).ToArray());
-                }
-                IsTransaction = false;
+                onConnection?.SetTag("Socket number", empty);
+                onConnection?.SetTag("Connection class", GetType());
+                _ = OnConnected();
+                _ = OnConnected(empty);
             }
+
+            if (!con.Client.Connected)
+            {
+                goto Final;
+            }
+
+            var reciveLoop = new Task(async () =>
+            {
+                try
+                {
+                    byte[] buffer = new byte[32_768];
+                    int bytesRead = 0;
+                    while ((bytesRead = await connections[empty]!.Value.Stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        /*if (bytesRead < Packet.StartSize + 8)
+                        {
+                            await Send(new Packet(buffer.Take(bytesRead).ToArray()), empty);
+                        }
+                        else*/
+                        {
+                            connections[empty]!.Value.ReciveBuffer.AddData(buffer.Take(bytesRead));
+                        }
+                    }
+                }
+                catch { }
+
+                groupServer.Close();
+            });
+            reciveLoop.Start();
+            // HandelLoop.Start();
+            int cnt = 0;
+
+            while (con.Client.Connected)
+            {
+                int hasData = (con.ReciveBuffer.EOF ? 0 : 1) + (con.SendBuffer.EOF ? 0 : 2);
+
+                if (hasData >= 2)
+                {
+                    con.Stream.Write(con.SendBuffer.ReadAll());
+                    con.Stream.Flush();
+                    con.SendBuffer.SafeStep();
+                }
+                if (hasData == 0)
+                {
+                    await Task.Delay(10);
+                }
+                else if (hasData % 2 == 1)
+                {
+                    var currentPacket = con.ReciveBuffer.ReadPacket();
+                    if (currentPacket.Size < Packet.StartSize) { } // Invalid packet skip
+                    else if (currentPacket.Size == Packet.StartSize)
+                    {
+                        if (IsServer) await Send(currentPacket, empty);
+                    }
+                    else
+                    {
+                        cnt++;
+                        cnt %= 10;
+                        Logging.LogInfo("There is data: {0}", currentPacket.Size);
+                        _ = handelPacket(currentPacket, empty);
+
+                        con.ReciveBuffer.SafeStep();
+                    }
+                }
+            }
+
+            /*while (groupServer.Connected)
+            {
+                try
+                {
+                    Logging.LogInfo("{0}:{1}", GetType().FullName!, groupServer.Connected);
+                    while (connections[empty]!.Value.ReciveBuffer.EOF)
+                    {
+                        await Task.Delay(1);
+                    }
+                    if (!groupServer.Connected) break;
+                    var currentPacket = connections[empty]!.Value.ReciveBuffer.ReadPacket();
+                    if (currentPacket.Size <= Packet.StartSize + 8)
+                    {
+                        if(!IsServer) _ = Send(currentPacket, empty);
+                    }
+                    else
+                    {
+                        _ = handelPacket(currentPacket, empty);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logging.LogError(e);
+                }
+                cnt++;
+                cnt %= 10;
+                if (cnt == 0)
+                    connections[empty]!.Value.ReciveBuffer.SafeStep();
+                Logging.LogInfo("count: {0}", cnt);
+            }*/
         }
-        catch(Exception e)
+        catch (ObjectDisposedException)
+        {
+            // Conenction posibly closed
+        }
+        catch (SocketException) { }
+        catch (Exception e)
         {
             Logging.LogError(e);
         }
         finally
         {
+            await OnDisconect(empty);
             Logging.LogInfo($"Closing connection [{empty}]");
-            sockets[empty]!.Close();
-            connections[empty]!.Close();
+            connections[empty]!.Value.Close();
         }
 
-        sockets[empty] = null;
+    Final:
         connections[empty] = null;
     }
 
     private async Task handelPacket(Packet pkt, int connection)
     {
-        if (called.Count != 0)
+        string? parentid = null;
+        if (SendTrace)
         {
-            if (called.ContainsKey(pkt.gnack))
+            try
             {
-                called[pkt.gnack] = pkt;
-                return;
+                // If shareActivity
+                var rpk = pkt.GetRPacket();
+                {
+                    var str = rpk.ReverseReadString();
+                    pkt.RemoveLast(str.Length + 5);
+                    parentid = str;
+                    // Logging.LogInfo("SID: {0}", str.Length);
+                    // Logging.LogInfo("SID: {0}: {1}", str.Length, str);
+                }
+            }
+            catch
+            {
+
             }
         }
-        var p = await HandelPacket(pkt, connection);
-        if (p != null)
+        using var _HandelPacket = this.StartActivity("Handeling packet", parentID: parentid);
+        _HandelPacket?.SetTag("command", pkt.Command);
+        _HandelPacket?.SetTag("Size", pkt.Size);
+        _HandelPacket?.SetTag("Sync packet", false);
+        try
         {
-            await ReplyPacket(pkt, p, connection);
+            if (called.Count != 0)
+            {
+                if (called.ContainsKey(pkt.gnack))
+                {
+                    _HandelPacket?.SetTag("Sync packet", true);
+                    called[pkt.gnack] = pkt;
+                    return;
+                }
+            }
+            var p = await HandelPacket(pkt, connection);
+            if (p != null)
+            {
+                await ReplyPacket(pkt, p, connection);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.LogError(ex);
+            _HandelPacket?.SetTag("Error", true);
+            _HandelPacket?.SetTag("Message", ex);
+            throw;
         }
     }
 
     public virtual Task OnConnected() => Task.CompletedTask;
+    public virtual Task OnConnected(int socket) => Task.CompletedTask;
     public virtual Task<Packet?> HandelPacket(Packet pkt, int socketNr) => Task.FromResult<Packet?>(null);
+    public virtual Task OnDisconect(int socket) => Task.CompletedTask;
 
     public async Task Send(Packet pkt, int conenction = 0)
     {
-        if (pkt.Size >= 10)
+        if (pkt.Size < 0) return; // Not a valid packet size
+
+        using var SendActivity = this.StartActivity("Sending packet");
+        SendActivity?.SetTag("Size", pkt.Size);
+
+        if (pkt.Size < 6 + Packet.StartSize)
         {
-            Logging.LogInfo($"Sending: [{pkt.Size}]");
+            SendActivity?.SetTag("Command", "PING");
+            SendActivity?.SetTag("Ping", true);
         }
-        await sockets[conenction]!.WriteAsync(pkt.Data, 0, (int)pkt.Size);
-        await sockets[conenction]!.FlushAsync();
+        else
+        {
+            SendActivity?.SetTag("Command", pkt.Command);
+            SendActivity?.SetTag("Ping", false);
+            if (SendTrace)
+            {
+                // If shareActivity
+                var wpk = new WPacket(pkt);
+                if (SendActivity != null)
+                {
+                    var id = SendActivity?.Id.ToString()!;
+
+                    var sz = wpk.WriteString(id);
+                    wpk.WriteShort((short)(sz));
+                    pkt = wpk.Clone();
+                }
+                else
+                {
+
+                }
+            }
+        }
+
+        if (connections[conenction] != null)
+        {
+            connections[conenction]!.Value.SendBuffer.AddData(pkt);
+            // await connections[conenction]!.Value.Stream.WriteAsync(pkt.Data, 0, (int)pkt.Size);
+            // await connections[conenction]!.Value.Stream.FlushAsync();
+        }
+        else
+        {
+            Logging.LogInfo("[{1}] No conenction has been made at socket: {0}", conenction, GetType().Name);
+        }
         pkt.Final();
     }
 
     public uint packet { get; private set; } = 0;
 
-    public async Task<Packet?> SyncCall(Packet pkt, int timeout = 10_000)
+    public async Task<RPacket?> SyncCall(Packet pkt, int timeout = 10_000, int connection = 0)
     {
+        using var SyncActivity = this.StartActivity("Sync call");
+        SyncActivity?.SetTag("Conenction", connection);
+        SyncActivity?.SetTag("Command", pkt.Command);
         // pkt.AddRandomGnack();
         pkt.WriteNewGnack(++packet);
         uint test = pkt.gnack + 2147483648;
@@ -193,27 +447,72 @@ public abstract class Connection
         await Send(pkt);
         called.Add(test, null);
         var delay = Task.Delay(timeout);
+        using var WaitForReply = this.StartActivity("Sync wait");
         while (called[test] == null && !delay.IsCompleted)
         {
-            await Task.Delay(100);
+            await Task.Delay(1);
         }
         var result = called[test];
         called.Remove(test);
-        return result;
+        if (result == null)
+            WaitForReply?.SetStatus(ActivityStatusCode.Error);
+        return result?.GetRPacket();
     }
 
     public async Task ReplyPacket(Packet pkt, Packet packet, int connection)
-    {   
+    {
+        using var ReplayPacket = this.StartActivity("Replaying packet");
+
+        ReplayPacket?.SetTag("Conenction", connection);
+        ReplayPacket?.SetTag("OGCommand", pkt.Command);
+
         packet.WriteNewGnack(pkt.gnack + 2147483648);
         await Send(packet, connection);
     }
 
     public async void SendToAll(Packet packet)
     {
-        for (int i = 0; i < sockets.Length; i++)
+        using var SendToAll = this.StartActivity("Send to all");
+        for (int i = 0; i < connections.Length; i++)
         {
-            if (sockets[i] != null)
+            if (connections[i] != null)
                 await Send(packet, i);
         }
     }
+
+    public int GetIP(int socket)
+    {
+        return 16777343; // loopback (127.0.0.1)
+        // var i = this.connections[socket]!.Client.RemoteEndPoint as IPEndPoint;
+        // return 16777343; // loopback (127.0.0.1)
+    }
+
+    internal void DisconectAll()
+    {
+        for (int i = 0; i < connections.Length; i++)
+        {
+            Disconect(i);
+        }
+    }
+}
+
+public class Connection<T> where T : Connection
+{
+    public static T Instance { get => _instance ?? throw new Exception("Instance has not been set"); }
+    private static T? _instance;// = new T();
+
+    public static void SetInstance(T i)
+    {
+        if (_instance != null) return; _instance = i;
+    }
+
+    public static Task Send(Packet pkt, int connection = 0) => Instance.Send(pkt, connection);
+    public static void SendToAll(Packet pkt) => Instance.SendToAll(pkt);
+    public static void Init(string ip="", int port =0) => Instance.Init(ip, port);
+
+    public static void Disconect(int socket) => Instance.Disconect(socket);
+
+    public static Task<RPacket?> SyncCall(Packet wpk, int timeOut = 1_000) => Instance.SyncCall(wpk, timeOut);
+
+    public static void DisconectAll() => Instance.DisconectAll();
 }

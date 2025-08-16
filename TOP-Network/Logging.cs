@@ -15,7 +15,7 @@ public static class Logging
 
     public static LogLevels LogLevel = 0;
 
-    private static void Write(object Value, LogLevels severity)
+    private static void Write(string Value, LogLevels severity, params object[] args)
     {
         if (severity < LogLevel)
         {
@@ -23,34 +23,39 @@ public static class Logging
         }
         var t = new StackTrace(true);
         var f = t.GetFrame(2)!;
-
         DateTime currentTime = DateTime.Now;
         var fn = Path.GetFileName(f.GetFileName());
-        Console.WriteLine($"[{fn}:{f.GetFileLineNumber()}] [{currentTime}]: {Value}");
+        Console.WriteLine($"[{fn}:{f.GetFileLineNumber()}] [{currentTime}]: {string.Format(Value.ToString()!, args)}");
     }
 
     public static void LogError(object Value)
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Write(Value, LogLevels.Error);
+        Write(Value.ToString()!, LogLevels.Error);
     }
 
-    public static void LogImportant(object Value)
+    public static void LogImportant(string Value)
     {
         Console.ForegroundColor = ConsoleColor.White;
         Write(Value, LogLevels.Important);
     }
 
-    public static void LogWarning(object Value)
+    public static void LogWarning(string Value)
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
         Write(Value, LogLevels.Warning);
     }
 
-    public static void LogInfo(object Value)
+    public static void LogInfo(string Value, params object[] args)
     {
         Console.ForegroundColor = ConsoleColor.White;
-        Write(Value, LogLevels.Info);
+        Write(Value, LogLevels.Info, args);
+    }
+
+    public static void LogInfo(string Value)
+    {
+        Console.ForegroundColor = ConsoleColor.White;
+        Write(Value.Replace("{", "*"), LogLevels.Info);
     }
 
     public static void LogTodo(object v)
