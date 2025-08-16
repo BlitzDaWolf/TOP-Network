@@ -67,11 +67,11 @@ public class RPacket : Packet
     public byte ReadChar() => GetBitReader().ReadByte();
 
     public int ReadLong() => GetBitReader().ReadType<int>();
-    public byte[] ReadSeq() => GetBitReader().ReadType<byte[]>() ?? new byte[0];
+    public virtual byte[] ReadSeq() => GetBitReader().ReadType<byte[]>() ?? new byte[0];
 
     public short ReadShort() => GetBitReader().ReadType<short>();
 
-    public string ReadString() => (GetBitReader().ReadType<string>() ?? "").Replace("\0", "");
+    public virtual string ReadString() => (GetBitReader().ReadType<string>() ?? "").Replace("\0", "");
 
     public override void RemoveLast(int size)
     {

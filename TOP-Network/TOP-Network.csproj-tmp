@@ -17,9 +17,4 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\TOP-Records\TOP-Records\TOP-Records.csproj" />
-    <ProjectReference Include="..\..\TOP_Utils\TOP_Utils\TOP_Utils.csproj" />
-  </ItemGroup>
-
 </Project>
