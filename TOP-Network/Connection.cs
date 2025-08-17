@@ -269,10 +269,12 @@ public abstract class Connection
                     {
                         cnt++;
                         cnt %= 10;
-                        Logging.LogInfo("There is data: {0}", currentPacket.Size);
                         _ = handelPacket(currentPacket, empty);
 
-                        con.ReciveBuffer.SafeStep();
+                        if (cnt == 0)
+                        {
+                            con.ReciveBuffer.SafeStep();
+                        }
                     }
                 }
             }

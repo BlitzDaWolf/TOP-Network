@@ -24,6 +24,12 @@ jobs:
         repository: BlitzDaWolf/TOP-Records
         token: ${{ secrets.GH_PAT }}
         path: 'TOP-Records'
+    - uses: actions/checkout@v4
+      with:
+        ref: main
+        repository: BlitzDaWolf/TOP_Utils
+        token: ${{ secrets.GH_PAT }}
+        path: 'TOP_Utils'
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
