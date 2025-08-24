@@ -18,6 +18,7 @@
         CMD_CP_BASE = 6000,
         CMD_OS_BASE = 6500,
         CMD_SO_BASE = 7000,
+        CMD_UU_BASE  = 8000,
         CMD_CM_ROLEBASE = 300,
         CMD_CM_GULDBASE = 400,
         CMD_CM_CHARBASE = 430,
@@ -559,6 +560,9 @@
         CMD_SO_LEAVE_MAP = 7008,
 
         CMD_SO_UPDATE = 7010,
-        CMD_SO_GAMEUPDATE = 7011
+        CMD_SO_GAMEUPDATE = 7011,
+
+
+        CMD_UU_SYNC = 8001
     }
 }
