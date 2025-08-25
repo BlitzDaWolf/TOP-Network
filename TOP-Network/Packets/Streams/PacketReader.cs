@@ -23,13 +23,14 @@ public class PacketReader
         return (sbyte)Stream.data[Stream.Position++];
     }
 
-    public byte[] Readbytes(int size)
+
+    public byte[] ReadBytes(int size)
     {
         var a = Stream.data.Skip(Stream.Position).Take(size).ToArray();
         Stream.Position += size;
         return a;
     }
-    public byte[] Readbytes(int size, bool small = false)
+    public byte[] ReadBytes(int size, bool small = false)
     {
         var a = Stream.data.Skip(Stream.Position).Take(size).ToArray();
         Stream.Position += size;
@@ -46,8 +47,8 @@ public class PacketReader
 
     public object? ReadType(Type type, bool small = false)
     {
-        if (type == typeof(string)) return string.Join("", this.Readbytes((short)this.ReadType(typeof(short))!).Select(x => (char)x));
-        if (type == typeof(byte[])) return this.Readbytes((short)this.ReadType(typeof(short))!);
+        if (type == typeof(string)) return string.Join("", this.ReadBytes((short)this.ReadType(typeof(short))!).Select(x => (char)x));
+        if (type == typeof(byte[])) return this.ReadBytes((short)this.ReadType(typeof(short))!);
         if (type == typeof(DateTime)) return new DateTime(this.ReadType<long>());
         if (type == typeof(bool)) return this.ReadByte() == 1;
 
@@ -58,20 +59,20 @@ public class PacketReader
         var byteLength = type.SizeOf();
 
         // short
-        if (type == typeof(short)) return BinaryPrimitives.ReadInt16BigEndian(this.Readbytes(byteLength, small));
-        if (type == typeof(ushort)) return BinaryPrimitives.ReadUInt16BigEndian(this.Readbytes(byteLength, small));
+        if (type == typeof(short)) return BinaryPrimitives.ReadInt16BigEndian(this.ReadBytes(byteLength, small));
+        if (type == typeof(ushort)) return BinaryPrimitives.ReadUInt16BigEndian(this.ReadBytes(byteLength, small));
 
         // Int
-        if (type == typeof(int)) return BinaryPrimitives.ReadInt32BigEndian(this.Readbytes(byteLength, small));
-        if (type == typeof(uint)) return BinaryPrimitives.ReadUInt32BigEndian(this.Readbytes(byteLength, small));
+        if (type == typeof(int)) return BinaryPrimitives.ReadInt32BigEndian(this.ReadBytes(byteLength, small));
+        if (type == typeof(uint)) return BinaryPrimitives.ReadUInt32BigEndian(this.ReadBytes(byteLength, small));
 
 
-        if (type == typeof(float)) return BinaryPrimitives.ReadSingleBigEndian(this.Readbytes(byteLength, small)); // float
-        if (type == typeof(double)) return BinaryPrimitives.ReadDoubleBigEndian(this.Readbytes(byteLength, small)); // double
+        if (type == typeof(float)) return BinaryPrimitives.ReadSingleBigEndian(this.ReadBytes(byteLength, small)); // float
+        if (type == typeof(double)) return BinaryPrimitives.ReadDoubleBigEndian(this.ReadBytes(byteLength, small)); // double
 
         // Long
-        if (type == typeof(long)) return BinaryPrimitives.ReadInt64BigEndian(this.Readbytes(byteLength, small));
-        if (type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(this.Readbytes(byteLength, small));
+        if (type == typeof(long)) return BinaryPrimitives.ReadInt64BigEndian(this.ReadBytes(byteLength, small));
+        if (type == typeof(ulong)) return BinaryPrimitives.ReadUInt64BigEndian(this.ReadBytes(byteLength, small));
 
         return null;
         // throw new BinaryException(type);

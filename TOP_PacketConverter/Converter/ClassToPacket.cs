@@ -6,6 +6,8 @@ using TOP_Network.Exceptions;
 using TOP_PacketConverter.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
+using TOP_Network.Packets.Streams;
+using TOP_Network.Extention;
 
 namespace TOP_PacketConverter.Converter
 {
@@ -18,7 +20,7 @@ namespace TOP_PacketConverter.Converter
 
             Packet packet = new();
             packet.Init(new byte[4096*4]);
-            using BinaryWriter writer = packet.GetBitWriter();
+            PacketWriter writer = packet.GetBitWriter();
             writer.BaseStream.Position = 0;
 
             if (Packet.LongSize)
@@ -57,7 +59,7 @@ namespace TOP_PacketConverter.Converter
             return Convert(entity, c.Command);
         }
 
-        private static void WriteData(this BinaryWriter writer, object entity, Dictionary<PropertyInfo, object> values)
+        private static void WriteData(this PacketWriter writer, object entity, Dictionary<PropertyInfo, object> values)
         {
             Dictionary<PropertyInfo, object> test = new Dictionary<PropertyInfo, object>(values);
             var properties = entity.GetType().GetProperties();
@@ -107,7 +109,7 @@ namespace TOP_PacketConverter.Converter
             }
         }
 
-        private static void Write(this BinaryWriter writer, PropertyInfo info, object entity, Dictionary<PropertyInfo, object> values)
+        private static void Write(this PacketWriter writer, PropertyInfo info, object entity, Dictionary<PropertyInfo, object> values)
         {
             values.Add(info, info.GetValue(entity)!);
             if (info.PropertyType.IsArray)
@@ -164,7 +166,7 @@ namespace TOP_PacketConverter.Converter
             return c;
         }
 
-        private static void WriteSingle(this BinaryWriter writer, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static void WriteSingle(this PacketWriter writer, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
             if (!writer.WriteType(values[info], info.GetCustomAttributes(typeof(SmallEndeanAttribute)).FirstOrDefault() != null))
             {
@@ -172,7 +174,7 @@ namespace TOP_PacketConverter.Converter
             }
         }
 
-        public static void WriteArry(this BinaryWriter writer, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        public static void WriteArry(this PacketWriter writer, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
             if (!writer.WriteType(values[info]))
             {
@@ -232,7 +234,7 @@ namespace TOP_PacketConverter.Converter
             }
         }
 
-        private static void WriteLength(this BinaryWriter writer, Type writeType, int size)
+        private static void WriteLength(this PacketWriter writer, Type writeType, int size)
         {
             object t = null;
 

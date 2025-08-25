@@ -6,12 +6,13 @@ using TOP_Network.Exceptions;
 using TOP_PacketConverter.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
+using TOP_Network.Packets.Streams;
 
 namespace TOP_PacketConverter.Converter
 {
     class PacketReadS
     {
-        public BinaryReader Reader { get; set; }
+        public PacketReader Reader { get; set; }
         public Dictionary<PropertyInfo, object> Values { get; set; }
     }
 
@@ -32,7 +33,7 @@ namespace TOP_PacketConverter.Converter
         {
             Dictionary<PropertyInfo, object> values = new();
 
-            using var reader = packet.GetBitReader();
+            var reader = packet.GetBitReader();
             reader.ReadBytes(Packet.StartSize + 4);
 
             var command = (Commands)(short)reader.ReadType(typeof(short));
@@ -59,7 +60,7 @@ namespace TOP_PacketConverter.Converter
         {
             Dictionary<PropertyInfo, object> values = [];
 
-            using var reader = packet.GetBitReader();
+            var reader = packet.GetBitReader();
             reader.ReadType(typeof(int));
             reader.ReadType(typeof(int));
 
@@ -98,7 +99,7 @@ namespace TOP_PacketConverter.Converter
             }
         }
 
-        public static object Read(this BinaryReader reader, Type type, Dictionary<PropertyInfo, object> values)
+        public static object Read(this PacketReader reader, Type type, Dictionary<PropertyInfo, object> values)
         {
             Dictionary<PropertyInfo, object> test = new(values);
             var entity = Activator.CreateInstance(type)!;
@@ -163,7 +164,7 @@ namespace TOP_PacketConverter.Converter
             return entity;
         }
 
-        private static int ReadIf(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static int ReadIf(this PacketReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
             List<IfAttribute> ifs = info.GetCustomAttributes<IfAttribute>().Where(x => x is not WhileAttribute).ToList();
             if (ifs.Count == 0) return 0;
@@ -183,7 +184,7 @@ namespace TOP_PacketConverter.Converter
 
             return vals != null ? 2 : 1;
         }
-        private static bool? ReadBreak(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
+        private static bool? ReadBreak(this PacketReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
         {
             BreakIfAttribute? ifs = info.GetCustomAttribute<BreakIfAttribute>();
             if (ifs == null) return null;
@@ -194,7 +195,7 @@ namespace TOP_PacketConverter.Converter
             return ifs.Check(v);
         }
 
-        private static bool ReadChooise(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
+        private static bool ReadChooise(this PacketReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
         {
 
             List<ChooseAttribute?> choises = info.GetCustomAttributes(typeof(ChooseAttribute)).Select(x => x as ChooseAttribute).ToList();
@@ -214,7 +215,7 @@ namespace TOP_PacketConverter.Converter
             return false;
         }
 
-        private static byte ReadValid(this BinaryReader reader, PropertyInfo info, object entity)
+        private static byte ReadValid(this PacketReader reader, PropertyInfo info, object entity)
         {
             // Get validRecordAttribute
             // Check if there is an attribute
@@ -249,7 +250,7 @@ namespace TOP_PacketConverter.Converter
             return RecorReaders.GetRecord(valids.RecoredTable, id) == null ? (byte)2 : (byte)1;
         }
 
-        private static bool _Read(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
+        private static bool _Read(this PacketReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values, object entity)
         {
             if (values.ContainsKey(info)) return false;
 
@@ -267,7 +268,7 @@ namespace TOP_PacketConverter.Converter
         }
 
         #region test
-        private static object? ReadArry(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static object? ReadArry(this PacketReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
             var res = reader.ReadType(info.PropertyType);
             if (res == null)
@@ -323,7 +324,7 @@ namespace TOP_PacketConverter.Converter
             return res;
         }
 
-        private static object ReadSingle(this BinaryReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
+        private static object ReadSingle(this PacketReader reader, PropertyInfo info, Dictionary<PropertyInfo, object> values)
         {
 
             if (info.GetCustomAttribute<ReadTypeAttribute>() != null)
