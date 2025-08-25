@@ -1,4 +1,4 @@
-﻿using TOP_PacketConverter.Enum;
+﻿using TOP_Network.Enum;
 
 namespace TOP_PacketConverter.Attributes
 {

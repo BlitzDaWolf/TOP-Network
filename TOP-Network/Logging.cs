@@ -44,7 +44,9 @@ public static class Logging
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
         Write(Value, LogLevels.Warning);
-    }    public static void LogWarning(string Value, params object[] args)
+    }
+
+    public static void LogWarning(string Value, params object[] args)
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
         Write(Value, LogLevels.Warning, args);

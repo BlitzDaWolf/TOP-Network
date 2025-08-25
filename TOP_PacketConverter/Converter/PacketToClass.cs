@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using TOP_PacketConverter.Attributes;
-using TOP_PacketConverter.Enum;
-using TOP_PacketConverter.Exceptions;
+using TOP_Network.Enum;
+using TOP_Network.Exceptions;
 using TOP_PacketConverter.Extention;
-using TOP_PacketConverter.Packets;
+using TOP_Network.Packets;
 using TOP_Records;
 
 namespace TOP_PacketConverter.Converter
@@ -51,7 +51,6 @@ namespace TOP_PacketConverter.Converter
             }
             catch (Exception)
             {
-                Logging.LogInfo(packet.DisplayHex());
                 throw;
             }
         }
