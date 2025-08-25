@@ -1,6 +1,6 @@
 ﻿using System.Reflection.Emit;
 
-namespace TOP_Network.Extention
+namespace TOP_PacketConverter.Extention
 {
     public static class TypeExtention
     {

@@ -1,4 +1,4 @@
-﻿namespace TOP_Network.Attributes
+﻿namespace TOP_PacketConverter.Attributes
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class RequiredClassAttribute : Attribute

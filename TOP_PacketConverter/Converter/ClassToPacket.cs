@@ -1,13 +1,13 @@
 ﻿using System.Reflection;
 using System.Reflection.PortableExecutable;
-using TOP_Network.Attributes;
-using TOP_Network.Enum;
-using TOP_Network.Exceptions;
-using TOP_Network.Extention;
-using TOP_Network.Packets;
+using TOP_PacketConverter.Attributes;
+using TOP_PacketConverter.Enum;
+using TOP_PacketConverter.Exceptions;
+using TOP_PacketConverter.Extention;
+using TOP_PacketConverter.Packets;
 using TOP_Records;
 
-namespace TOP_Network.Converter
+namespace TOP_PacketConverter.Converter
 {
     public static class ClassToPacket
     {

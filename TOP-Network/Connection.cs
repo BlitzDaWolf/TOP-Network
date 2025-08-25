@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -82,10 +81,11 @@ public class Connection : IConnection
         while (true)
         {
             await Task.Delay(2000);
-            foreach (var a in connections)
+            // foreach (var a in connections)
+            for (int i = 0; i < connections.Length; i++)
             {
-                var stream = a.Value.Stream;
-                // await Send(p);
+                if (!IsConnected(i)) continue;
+                var stream = connections[i]!.Value!.Stream;
                 await stream.WriteAsync(p.Data, 0, p.Size);
                 await stream.FlushAsync();
             }
@@ -94,7 +94,26 @@ public class Connection : IConnection
 
     public async Task Connect(TcpClient Client)
     {
+        await Task.Delay(1);
         Logging.LogTodo("Implement connection logic");
+
+        Logging.LogTodo("Find empty spot");
+
+        try
+        {
+            Logging.LogTodo("Start reciving loop");
+
+            Logging.LogTodo("Start handle/send loop");
+        }
+        catch
+        {
+
+        }
+        finally
+        {
+            Logging.LogTodo("Close out connection");
+        }
+
     }
 
     public void Send(Packet pkt, int connection)
@@ -177,7 +196,7 @@ public class Connection : IConnection
             WaitForReply?.SetStatus(ActivityStatusCode.Error);
         return result?.GetRPacket();
     }
-    public async Task ReplyPacket(Packet originalPacket, Packet sendPacket, int connection = 0)
+    public void ReplyPacket(Packet originalPacket, Packet sendPacket, int connection = 0)
     {
         using var ReplayPacket = this.StartActivity("Replaying packet");
 

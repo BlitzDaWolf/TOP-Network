@@ -1,6 +1,4 @@
-using System.Reflection.PortableExecutable;
-using TOP_Network.Attributes;
-using TOP_Network.Extention;
+using TOP_Network;
 
 namespace TOP_Network.Packets;
 

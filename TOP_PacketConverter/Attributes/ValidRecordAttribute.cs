@@ -1,6 +1,6 @@
 ﻿using TOP_Records;
 
-namespace TOP_Network.Attributes
+namespace TOP_PacketConverter.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
     public class ValidRecordAttribute : Attribute

@@ -1,4 +1,4 @@
-﻿namespace TOP_Network.Attributes
+﻿namespace TOP_PacketConverter.Attributes
 {
     public class ArrayLengthAttribute : Attribute
     {

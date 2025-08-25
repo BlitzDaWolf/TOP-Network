@@ -1,7 +1,7 @@
 ﻿using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 
-namespace TOP_Network.Attributes
+namespace TOP_PacketConverter.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class IfAttribute : Attribute

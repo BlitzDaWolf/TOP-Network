@@ -1,13 +1,11 @@
 ﻿using System.Buffers.Binary;
-using System.Reflection.PortableExecutable;
-using TOP_Network.Exceptions;
 using TOP_Records;
 
-namespace TOP_Network.Extention
+namespace TOP_PacketConverter.Extention
 {
     public static class BinaryExtention
     {
-        public static T? ReadType<T>(this BinaryReader reader) => (T)reader.ReadType(typeof(T));
+        public static T? ReadType<T>(this BinaryReader reader) => (T?)reader.ReadType(typeof(T));
 
         public static object? ReadType(this BinaryReader reader, Type type, bool small = false)
         {
@@ -17,8 +15,8 @@ namespace TOP_Network.Extention
             if (type == typeof(bool)) return reader.ReadByte() == 1;
 
             // byte
-            if (type == typeof(byte)) return (reader.ReadByte());
-            if (type == typeof(sbyte)) return (reader.ReadSByte());
+            if (type == typeof(byte)) return reader.ReadByte();
+            if (type == typeof(sbyte)) return reader.ReadSByte();
 
             var byteLength = type.SizeOf();
 

@@ -31,7 +31,7 @@ public interface IConnection
     public void SendToAll(Packet pkt);
 
     public Task<RPacket?> SyncCall(Packet pkt, int timeOut = 10_000, int connection = 0);
-    public Task ReplyPacket(Packet originalPacket, Packet sendPacket, int connection = 0);
+    public void ReplyPacket(Packet originalPacket, Packet sendPacket, int connection = 0);
 
     public void Disconect(int connection = 0);
     public void DisconectAll();

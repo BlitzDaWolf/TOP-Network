@@ -1,6 +1,6 @@
-﻿using TOP_Network.Enum;
+﻿using TOP_PacketConverter.Enum;
 
-namespace TOP_Network.Attributes
+namespace TOP_PacketConverter.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class DefaultCommandAttribute : Attribute
