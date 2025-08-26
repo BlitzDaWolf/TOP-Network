@@ -21,7 +21,7 @@ public abstract class ConnectionV1
     // TcpClient? tcpClient;
     // NetworkStream? stream;
 
-    private Dictionary<uint, Packet?> called = new Dictionary<uint, Packet?>();
+    private Dictionary<uint, V1Packet?> called = new Dictionary<uint, V1Packet?>();
 
     public ConnectionV1(int maxConnections = 10)
     {
@@ -49,7 +49,7 @@ public abstract class ConnectionV1
 
     public async Task KeepAlive()
     {
-        Packet p = new Packet(new byte[] { 0x00, 0x02 });
+        V1Packet p = new V1Packet(new byte[] { 0x00, 0x02 });
         while (true)
         {
             await Task.Delay(2000);
@@ -148,7 +148,7 @@ public abstract class ConnectionV1
                 {
                     var tmp = new WPacket();
                     tmp.WriteCMD(Enum.Commands.CMD_UU_SYNC);
-                    tmp.WriteSize(6 + Packet.StartSize);
+                    tmp.WriteSize(6 + V1Packet.StartSize);
                     await Send(tmp);
                 }
             }
@@ -201,8 +201,8 @@ public abstract class ConnectionV1
                 else if (hasData % 2 == 1)
                 {
                     var currentPacket = con.ReciveBuffer.ReadPacket();
-                    if (currentPacket.Size < Packet.StartSize) { } // Invalid packet skip
-                    else if (currentPacket.Size == Packet.StartSize)
+                    if (currentPacket.Size < V1Packet.StartSize) { } // Invalid packet skip
+                    else if (currentPacket.Size == V1Packet.StartSize)
                     {
                         if (IsServer) await Send(currentPacket, empty);
                     }
@@ -271,7 +271,7 @@ public abstract class ConnectionV1
         connections[empty] = null;
     }
 
-    private async Task handelPacket(Packet pkt, int connection)
+    private async Task handelPacket(V1Packet pkt, int connection)
     {
         var con = connections[connection].Value;
 
@@ -283,7 +283,7 @@ public abstract class ConnectionV1
             {
                 var tmp = new WPacket();
                 tmp.WriteCMD(Enum.Commands.CMD_UU_SYNC);
-                tmp.WriteSize(6 + Packet.StartSize);
+                tmp.WriteSize(6 + V1Packet.StartSize);
                 await Send(tmp);
             }
             return;
@@ -340,17 +340,17 @@ public abstract class ConnectionV1
 
     public virtual Task OnConnected() => Task.CompletedTask;
     public virtual Task OnConnected(int socket) => Task.CompletedTask;
-    public virtual Task<Packet?> HandelPacket(Packet pkt, int socketNr) => Task.FromResult<Packet?>(null);
+    public virtual Task<V1Packet?> HandelPacket(V1Packet pkt, int socketNr) => Task.FromResult<V1Packet?>(null);
     public virtual Task OnDisconect(int socket) => Task.CompletedTask;
 
-    public async Task Send(Packet pkt, int conenction = 0)
+    public async Task Send(V1Packet pkt, int conenction = 0)
     {
         if (pkt.Size < 0) return; // Not a valid packet size
 
         using var SendActivity = this.StartActivity("Sending packet");
         SendActivity?.SetTag("Size", pkt.Size);
 
-        if (pkt.Size < 6 + Packet.StartSize)
+        if (pkt.Size < 6 + V1Packet.StartSize)
         {
             SendActivity?.SetTag("Command", "PING");
             SendActivity?.SetTag("Ping", true);
@@ -393,7 +393,7 @@ public abstract class ConnectionV1
 
     public uint packet { get; private set; } = 0;
 
-    public async Task<RPacket?> SyncCall(Packet pkt, int timeout = 10_000, int connection = 0)
+    public async Task<RPacket?> SyncCall(V1Packet pkt, int timeout = 10_000, int connection = 0)
     {
         using var SyncActivity = this.StartActivity("Sync call");
         SyncActivity?.SetTag("Conenction", connection);
@@ -417,7 +417,7 @@ public abstract class ConnectionV1
         return result?.GetRPacket();
     }
 
-    public async Task ReplyPacket(Packet pkt, Packet packet, int connection)
+    public async Task ReplyPacket(V1Packet pkt, V1Packet packet, int connection)
     {
         using var ReplayPacket = this.StartActivity("Replaying packet");
 
@@ -428,7 +428,7 @@ public abstract class ConnectionV1
         await Send(packet, connection);
     }
 
-    public async void SendToAll(Packet packet)
+    public async void SendToAll(V1Packet packet)
     {
         using var SendToAll = this.StartActivity("Send to all");
         for (int i = 0; i < connections.Length; i++)
@@ -468,13 +468,13 @@ public class Connection<T> where T : IConnection
         if (_instance != null) return; _instance = i;
     }
 
-    public static void Send(Packet pkt, int connection = 0) => Instance.Send(pkt, connection);
-    public static void SendToAll(Packet pkt) => Instance.SendToAll(pkt);
+    public static void Send(V1Packet pkt, int connection = 0) => Instance.Send(pkt, connection);
+    public static void SendToAll(V1Packet pkt) => Instance.SendToAll(pkt);
     public static void Init(string ip="", int port =0) => Instance.Init(ip, port);
 
     public static void Disconect(int socket) => Instance.Disconect(socket);
 
-    public static Task<RPacket?> SyncCall(Packet wpk, int timeOut = 1_000) => Instance.SyncCall(wpk, timeOut);
+    public static Task<RPacket?> SyncCall(V1Packet wpk, int timeOut = 1_000) => Instance.SyncCall(wpk, timeOut);
 
     public static void DisconectAll() => Instance.DisconectAll();
 }

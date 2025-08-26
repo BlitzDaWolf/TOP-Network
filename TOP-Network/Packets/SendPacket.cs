@@ -1,6 +1,6 @@
 ﻿namespace TOP_Network.Packets
 {
-    public class SendPacket : Packet
+    public class SendPacket : V1Packet
     {
     }
 }

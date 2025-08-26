@@ -3,14 +3,14 @@ using TOP_Network.Extention;
 
 namespace TOP_Network.Packets;
 
-public class WPacket : Packet
+public class WPacket : V1Packet
 {
     public WPacket() : base(new byte[32_768])
     {
         GetStream().Position = StartSize + 6;
         WriteSize(StartSize + 6);
     }
-    public WPacket(Packet pk) : this()
+    public WPacket(V1Packet pk) : this()
     {
         GetStream().Position = 0;
         GetBitWriter().WriteBytes(pk.GetData().Reverse().ToArray());

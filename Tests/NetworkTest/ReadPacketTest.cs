@@ -7,14 +7,14 @@ public class ReadPacketTest
 {
     public ReadPacketTest()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
     }
 
     [Fact]
     public void GetRead()
     {
-        Packet.LongSize = false;
-        Packet pkt = new Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
+        V1Packet.LongSize = false;
+        V1Packet pkt = new V1Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
         HelperFunctions.HelperSize(pkt, 10);
@@ -28,7 +28,7 @@ public class ReadPacketTest
     [Fact]
     public void ReadChar()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0C, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -44,7 +44,7 @@ public class ReadPacketTest
     [Fact]
     public void ReadShort()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0C, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -58,7 +58,7 @@ public class ReadPacketTest
     [Fact]
     public void ReadLong()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0C, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -71,7 +71,7 @@ public class ReadPacketTest
     [Fact]
     public void ReadSeq()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x04, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -84,7 +84,7 @@ public class ReadPacketTest
     [Fact]
     public void ReverseReadChar()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x04, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -100,7 +100,7 @@ public class ReadPacketTest
     [Fact]
     public void ReverseReadShort()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x04, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -114,7 +114,7 @@ public class ReadPacketTest
     [Fact]
     public void ReverseReadLong()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x04, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -127,7 +127,7 @@ public class ReadPacketTest
     [Fact]
     public void RemoveLast()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x04, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
@@ -143,7 +143,7 @@ public class ReadPacketTest
     [Fact]
     public void ReadString()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x1E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06,
             0x00, 0x14,
             0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x74, 0x65, 0x78, 0x74, 0x00
@@ -163,7 +163,7 @@ public class ReadPacketTest
     [Fact]
     public void ReverseReadString()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x20, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06,
             0x00, 0x14,
             0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x74, 0x65, 0x78, 0x74, 0x00,
@@ -184,7 +184,7 @@ public class ReadPacketTest
     [Fact]
     public void UnRead()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
         RPacket pkt = new RPacket([0x00, 0x0C, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);

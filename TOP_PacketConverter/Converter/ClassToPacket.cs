@@ -14,16 +14,16 @@ namespace TOP_PacketConverter.Converter
     public static class ClassToPacket
     {
 
-        public static Packet Convert(this object entity, Commands command)
+        public static V1Packet Convert(this object entity, Commands command)
         {
             Dictionary<PropertyInfo, object> values = [];
 
-            Packet packet = new();
+            V1Packet packet = new();
             packet.Init(new byte[4096*4]);
             PacketWriter writer = packet.GetBitWriter();
             writer.BaseStream.Position = 0;
 
-            if (Packet.LongSize)
+            if (V1Packet.LongSize)
             {
                 writer.WriteType(50);
             }
@@ -39,7 +39,7 @@ namespace TOP_PacketConverter.Converter
             var size = (int)packet.GetStream().Position;
             packet.GetStream().Position = 0;
 
-            if (Packet.LongSize)
+            if (V1Packet.LongSize)
             {
                 writer.WriteType(size);
             }
@@ -51,7 +51,7 @@ namespace TOP_PacketConverter.Converter
             return packet.Clone();
         }
 
-        public static Packet Convert(this object entity)
+        public static V1Packet Convert(this object entity)
         {
             var c = entity.GetType().GetCustomAttribute<DefaultCommandAttribute>();
             if (c == null) throw new Exception("No default command has been found");

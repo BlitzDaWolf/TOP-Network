@@ -3,7 +3,7 @@ using TOP_Network.Extention;
 
 namespace TOP_Network.Packets;
 
-public class RPacket : Packet
+public class RPacket : V1Packet
 {
     int reversePoint = 0;
 

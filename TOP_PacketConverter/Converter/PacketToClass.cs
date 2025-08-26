@@ -29,12 +29,12 @@ namespace TOP_PacketConverter.Converter
             keyValuePairs.Add(command, type);
         }
 
-        public static T Convert<T>(this Packet packet)
+        public static T Convert<T>(this V1Packet packet)
         {
             Dictionary<PropertyInfo, object> values = new();
 
             var reader = packet.GetBitReader();
-            reader.ReadBytes(Packet.StartSize + 4);
+            reader.ReadBytes(V1Packet.StartSize + 4);
 
             var command = (Commands)(short)reader.ReadType(typeof(short));
             T result;
@@ -56,7 +56,7 @@ namespace TOP_PacketConverter.Converter
             }
         }
 
-        public static object? Convert(this Packet packet)
+        public static object? Convert(this V1Packet packet)
         {
             Dictionary<PropertyInfo, object> values = [];
 

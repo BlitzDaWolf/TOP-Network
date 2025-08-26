@@ -38,14 +38,14 @@ public class NetworkBuffer
 
     public byte[] Peek(int size) => data.Skip(ToRemove).Take(size).ToArray();
 
-    public Packet ReadPacket()
+    public RPacket ReadPacket()
     {
-        var p = Peek(Packet.StartSize).Reverse().ToArray();
-        if (p.Length < Packet.StartSize) return new Packet(new byte[Packet.StartSize]);
-        int sz = Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
-        if (sz < Packet.StartSize)return new Packet(new byte[Packet.StartSize]);
-        if(Remaining < sz)return new Packet(new byte[Packet.StartSize]);
-        return new Packet(ReadBuffer(sz));
+        var p = Peek(V1Packet.StartSize).Reverse().ToArray();
+        if (p.Length < V1Packet.StartSize) return new RPacket(new byte[V1Packet.StartSize]);
+        int sz = V1Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
+        if (sz < V1Packet.StartSize)return new RPacket(new byte[V1Packet.StartSize]);
+        if(Remaining < sz)return new RPacket(new byte[V1Packet.StartSize]);
+        return new RPacket(ReadBuffer(sz));
     }
 
     public void AddData(IEnumerable<byte> data)
@@ -53,7 +53,7 @@ public class NetworkBuffer
         this.data.AddRange(data);
     }
 
-    public void AddData(Packet pkt)
+    public void AddData(V1Packet pkt)
     {
         AddData(pkt.GetData());
         pkt.Final();

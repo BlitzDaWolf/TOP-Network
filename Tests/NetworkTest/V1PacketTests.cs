@@ -5,18 +5,18 @@ using TOP_Network.Packets;
 
 namespace NetworkTest;
 
-public class PacketTests
+public class V1PacketTests
 {
-    public PacketTests()
+    public V1PacketTests()
     {
-        Packet.LongSize = false;
+        V1Packet.LongSize = false;
     }
 
 
     [Fact]
     public void CreatePacket()
     {
-        Packet pkt = new Packet();
+        V1Packet pkt = new V1Packet();
         Assert.NotNull(pkt);
         Assert.Empty(pkt.Data);
     }
@@ -32,15 +32,15 @@ public class PacketTests
     [Fact]
     public void CheckShortSize()
     {
-        Packet.LongSize = false;
-        Assert.False(Packet.LongSize);
-        Assert.Equal(2, Packet.StartSize);
+        V1Packet.LongSize = false;
+        Assert.False(V1Packet.LongSize);
+        Assert.Equal(2, V1Packet.StartSize);
     }
 
     [Fact]
     public void InitFunction()
     {
-        Packet pkt = new Packet();
+        V1Packet pkt = new V1Packet();
         Assert.NotNull(pkt);
         Assert.Empty(pkt.Data);
         pkt.Init([0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06]);
@@ -61,7 +61,7 @@ public class PacketTests
     [Fact]
     public void ValidGnack()
     {
-        Packet pkt = new Packet([0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06]);
+        V1Packet pkt = new V1Packet([0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
         Assert.True(pkt.ValidGnack);
@@ -71,7 +71,7 @@ public class PacketTests
     public void InvalidGnack()
     {
 
-        Packet pkt = new Packet([0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06]);
+        V1Packet pkt = new V1Packet([0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
         Assert.False(pkt.ValidGnack);
@@ -80,7 +80,7 @@ public class PacketTests
     [Fact]
     public void RandomGnack()
     {
-        Packet pkt = new Packet([0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06]);
+        V1Packet pkt = new V1Packet([0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06]);
 
         var currentGnack = pkt.GetGnack();
 
@@ -94,7 +94,7 @@ public class PacketTests
     [Fact]
     public void RemoveData()
     {
-        Packet pkt = new Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
+        V1Packet pkt = new V1Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
         HelperFunctions.HelperSize(pkt, 10);
@@ -117,7 +117,7 @@ public class PacketTests
     [Fact]
     public void DisplayHex()
     {
-        Packet pkt = new Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
+        V1Packet pkt = new V1Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
         HelperFunctions.HelperSize(pkt, 10);
@@ -129,7 +129,7 @@ public class PacketTests
     [Fact]
     public void ValidCommand()
     {
-        Packet pkt = new Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
+        V1Packet pkt = new V1Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
         Assert.NotNull(pkt);
         Assert.NotEmpty(pkt.Data);
         HelperFunctions.HelperSize(pkt, 10);
