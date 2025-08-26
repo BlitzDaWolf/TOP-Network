@@ -8,22 +8,23 @@ using TOP_Network.Packets;
 using TOP_Records;
 using TOP_Network.Packets.Streams;
 using TOP_Network.Extention;
+using TOP_Network.Interfaces.Packets;
 
 namespace TOP_PacketConverter.Converter
 {
     public static class ClassToPacket
     {
 
-        public static V1Packet Convert(this object entity, Commands command)
+        public static IPacket Convert(this object entity, Commands command)
         {
             Dictionary<PropertyInfo, object> values = [];
 
-            V1Packet packet = new();
+            Packet packet = new();
             packet.Init(new byte[4096*4]);
-            PacketWriter writer = packet.GetBitWriter();
+            PacketWriter writer = packet.GetWriter();
             writer.BaseStream.Position = 0;
 
-            if (V1Packet.LongSize)
+            if (packet.LongSize)
             {
                 writer.WriteType(50);
             }
@@ -39,7 +40,7 @@ namespace TOP_PacketConverter.Converter
             var size = (int)packet.GetStream().Position;
             packet.GetStream().Position = 0;
 
-            if (V1Packet.LongSize)
+            if (packet.LongSize)
             {
                 writer.WriteType(size);
             }
@@ -48,10 +49,10 @@ namespace TOP_PacketConverter.Converter
                 writer.WriteType((short)size);
             }
 
-            return packet.Clone();
+            return packet.Clone<Packet>();
         }
 
-        public static V1Packet Convert(this object entity)
+        public static IPacket Convert(this object entity)
         {
             var c = entity.GetType().GetCustomAttribute<DefaultCommandAttribute>();
             if (c == null) throw new Exception("No default command has been found");

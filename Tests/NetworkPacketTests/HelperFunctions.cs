@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 
-namespace NetworkTest;
+namespace NetworkPacketTests;
 
 public static class HelperFunctions
 {

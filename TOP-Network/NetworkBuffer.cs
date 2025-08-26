@@ -42,11 +42,11 @@ public class NetworkBuffer
     public RPacket ReadPacket()
     {
         throw new NotImplementedException();
-        /*var p = Peek(V1Packet.StartSize).Reverse().ToArray();
-        if (p.Length < V1Packet.StartSize) return new RPacket(new byte[V1Packet.StartSize]);
-        int sz = V1Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
-        if (sz < V1Packet.StartSize)return new RPacket(new byte[V1Packet.StartSize]);
-        if(Remaining < sz)return new RPacket(new byte[V1Packet.StartSize]);
+        /*var p = Peek(Packet.StartSize).Reverse().ToArray();
+        if (p.Length < Packet.StartSize) return new RPacket(new byte[Packet.StartSize]);
+        int sz = Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
+        if (sz < Packet.StartSize)return new RPacket(new byte[Packet.StartSize]);
+        if(Remaining < sz)return new RPacket(new byte[Packet.StartSize]);
         return new RPacket(ReadBuffer(sz));*/
     }
 

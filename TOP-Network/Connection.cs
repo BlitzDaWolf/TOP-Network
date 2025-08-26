@@ -243,7 +243,7 @@ public class Connection : IConnection
         var currentConnection = connections[connection]!.Value;
 
 
-        if (pkt.Size < 6 + V1Packet.StartSize)
+        if (pkt.Size < 6 + Packet.StartSize)
         {
             // Ping
             SendActivity?.SetTag("Command", "PING");

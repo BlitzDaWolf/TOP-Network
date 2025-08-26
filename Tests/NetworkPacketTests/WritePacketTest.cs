@@ -5,7 +5,7 @@ using TOP_Network.Enum;
 using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 
-namespace NetworkTest;
+namespace NetworkPacketTests;
 
 public class WritePacketTest
 {

@@ -7,6 +7,7 @@ using TOP_PacketConverter.Extention;
 using TOP_Network.Packets;
 using TOP_Records;
 using TOP_Network.Packets.Streams;
+using TOP_Network.Interfaces.Packets;
 
 namespace TOP_PacketConverter.Converter
 {
@@ -29,12 +30,12 @@ namespace TOP_PacketConverter.Converter
             keyValuePairs.Add(command, type);
         }
 
-        public static T Convert<T>(this V1Packet packet)
+        public static T Convert<T>(this IPacket packet)
         {
             Dictionary<PropertyInfo, object> values = new();
 
-            var reader = packet.GetBitReader();
-            reader.ReadBytes(V1Packet.StartSize + 4);
+            var reader = packet.GetReader();
+            reader.ReadBytes(packet.StartSize + 4);
 
             var command = (Commands)(short)reader.ReadType(typeof(short));
             T result;
@@ -43,7 +44,7 @@ namespace TOP_PacketConverter.Converter
                 result = (T)reader.Read(typeof(T), values);
                 if (packet.GetStream().Position != packet.Size)
                 {
-                    var h = packet.DisplayHex();
+                    // var h = packet.DisplayHex();
                     var missed = packet.Size - packet.GetStream().Position;
                     // throw new NotFullyReadException(result);
                 }
@@ -56,11 +57,11 @@ namespace TOP_PacketConverter.Converter
             }
         }
 
-        public static object? Convert(this V1Packet packet)
+        public static object? Convert(this Packet packet)
         {
             Dictionary<PropertyInfo, object> values = [];
 
-            var reader = packet.GetBitReader();
+            var reader = packet.GetReader();
             reader.ReadType(typeof(int));
             reader.ReadType(typeof(int));
 
@@ -74,7 +75,6 @@ namespace TOP_PacketConverter.Converter
                 var result = reader.Read(keyValuePairs[command], values);
                 if (reader.BaseStream.Position != packet.Size)
                 {
-                    var h = packet.DisplayHex();
                     var missed = packet.Size - reader.BaseStream.Position;
 
                     var m = reader.ReadBytes((int)missed);
