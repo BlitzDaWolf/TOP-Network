@@ -1,52 +1,88 @@
+using System.Net;
 using TOP_Network;
 using TOP_Network.Extention;
+using TOP_Network.Interfaces.Packets;
 
 namespace TOP_Network.Packets;
 
-public class WPacket : V1Packet
+public class WPacket : Packet, IWPacket
 {
-    public WPacket() : base(new byte[32_768])
+    public WPacket() : base()
     {
-        GetStream().Position = StartSize + 6;
-        WriteSize(StartSize + 6);
+        Init(new byte[32_768]);
+        WriteSize(StartSize + 4 + 2);
+        GetStream().Position = Size;
     }
-    public WPacket(V1Packet pk) : this()
+
+    public WPacket(IPacket packet) : this()
     {
         GetStream().Position = 0;
-        GetBitWriter().WriteBytes(pk.GetData().Reverse().ToArray());
+        GetWriter().WriteBytes(packet.Data);
     }
 
-    public void WriteLong(int value)
+    public bool WriteChar(byte value)
     {
-        base.GetBitWriter().WriteType(value);
-        WriteSize((int)GetStream().Position);
-    }
-    public void WriteSeq(byte[] data)
-    {
-        base.GetBitWriter().WriteType(data);
-        WriteSize((int)GetStream().Position);
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
     }
 
-    public int WriteString(string value)
+    public bool WriteLong(int value)
     {
-        if (value.Length == 0) value += "\0";
-        if (value.Last() != 0x00) value += '\0';
-        base.GetBitWriter().WriteType(value);
-        // WriteSeq(value.Select(x => (byte)x).ToArray());
-        WriteSize((int)GetStream().Position);
-        return value.Length;
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
     }
 
-    public void WriteShort(short v)
+    public bool WriteLongLong(long value)
     {
-        GetBitWriter().WriteType(v);
-        WriteSize((int)GetStream().Position);
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
     }
 
-    public void WriteChar(byte v)
+    public bool WriteSeq(byte[] value)
     {
-        GetBitWriter().WriteType(v);
-        WriteSize((int)GetStream().Position);
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
+    }
+
+    public bool WriteShort(short value)
+    {
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
+    }
+
+    public bool WriteString(string value)
+    {
+        if (value.Last() != '\0') value += "\0";
+
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
+    }
+
+    public bool WriteULong(uint value)
+    {
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
+    }
+
+    public bool WriteULongLong(ulong value)
+    {
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
+    }
+
+    public bool WriteUShort(ushort value)
+    {
+        GetWriter().WriteType(value);
+        WriteSize(GetStream().Position);
+        return true;
     }
 }
 

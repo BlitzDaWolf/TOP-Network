@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 using TOP_Utils;
 
@@ -17,7 +18,7 @@ public class Connection : IConnection
 
     public NetworkConnection?[] connections { get; private set; }
 
-    public Dictionary<uint, RPacket?> Calls { get; private set; } = new Dictionary<uint, RPacket?>();
+    public Dictionary<uint, IRPacket?> Calls { get; private set; } = new Dictionary<uint, IRPacket?>();
 
     public Connection(ILogger<Connection> logger, int maxClients = 10)
     {
@@ -85,28 +86,30 @@ public class Connection : IConnection
     public virtual void Start() { }
     public virtual Task OnConnected() => Task.CompletedTask;
     public virtual Task OnConnected(int socket) => Task.CompletedTask;
-    public virtual Task<V1Packet?> OnHandelPacket(RPacket packet, int connection)
+    public virtual Task<IPacket?> OnHandelPacket(IRPacket packet, int connection)
     {
         _logger.LogInformation("Function not overwriten: [{0}]@{1}", packet.Command, connection);
-        return Task.FromResult<V1Packet?>(null);
+        return Task.FromResult<IPacket?>(null);
     }
     public virtual Task OnDisconect(int socket) => Task.CompletedTask;
 
-    public async Task HandelPacket(RPacket packet, int connection)
+    public async Task HandelPacket(IRPacket packet, int connection)
     {
-        if (Calls.ContainsKey(packet.gnack))
+        if (Calls.ContainsKey(packet.GNACK))
         {
-            Calls[packet.gnack] = packet;
+            Calls[packet.GNACK] = packet;
             return;
         }
 
         var result = await OnHandelPacket(packet, connection);
-        if (result != null) Send(packet, connection);
+        throw new NotImplementedException();
+        // if (result != null) Send(packet, connection);
     }
 
     public async Task KeepAlive()
     {
-        V1Packet p = new V1Packet(new byte[] { 0x00, 0x02 });
+        IPacket p = new Packet();
+        p.Init([ 0x00, 0x02 ]);
         while (true)
         {
             await Task.Delay(2000);
@@ -185,10 +188,11 @@ public class Connection : IConnection
                 else if (hasData % 2 == 1)
                 {
                     var currentPacket = currentConenction.ReciveBuffer.ReadPacket();
-                    if (currentPacket.Size < V1Packet.StartSize) { } // Invalid packet skip
-                    else if (currentPacket.Size == V1Packet.StartSize)
+                    if (currentPacket.Size < currentPacket.StartSize) { } // Invalid packet skip
+                    else if (currentPacket.Size == currentPacket.StartSize)
                     {
-                        if (IsServer) Send(currentPacket, emptyValue);
+                        throw new NotImplementedException();
+                        // if (IsServer) Send(currentPacket, emptyValue);
                     }
                     else
                     {
@@ -227,9 +231,10 @@ public class Connection : IConnection
         return -1;
     }
 
-    public void Send(V1Packet pkt, int connection)
+    public void Send(IPacket pkt, int connection)
     {
-        if (pkt.Size < 0) return; // Invalid packet Size
+        throw new NotImplementedException();
+        /*if (pkt.Size < 0) return; // Invalid packet Size
         using var SendActivity = this.StartActivity("Sending packet");
         SendActivity?.SetTag("Size", pkt.Size);
         SendActivity?.SetTag("Encrypted", false); // Todo implement encryption function
@@ -273,9 +278,10 @@ public class Connection : IConnection
         }
 
         pkt.Final();
+        */
     }
 
-    public void SendToAll(V1Packet pkt)
+    public void SendToAll(IRPacket pkt)
     {
         using var SendToAll = this.StartActivity("Send to all");
         for (int i = 0; i < connections.Length; i++)
@@ -284,14 +290,14 @@ public class Connection : IConnection
         }
     }
 
-    public async Task<RPacket?> SyncCall(V1Packet pkt, int timeOut = 10_000, int connection = 0)
+    public async Task<IRPacket?> SyncCall(IRPacket pkt, int timeOut = 10_000, int connection = 0)
     {
         using var SyncActivity = this.StartActivity("Sync call");
         SyncActivity?.SetTag("Conenction", connection);
         SyncActivity?.SetTag("Command", pkt.Command);
         // pkt.AddRandomGnack();
-        pkt.WriteNewGnack(++PacketId);
-        uint test = pkt.gnack + 2147483648;
+        pkt.WriteGnack(++PacketId);
+        uint test = pkt.GNACK + 2147483648;
 
         Send(pkt, connection);
         Calls.Add(test, null);
@@ -307,14 +313,14 @@ public class Connection : IConnection
             WaitForReply?.SetStatus(ActivityStatusCode.Error);
         return result;
     }
-    public void ReplyPacket(V1Packet originalPacket, V1Packet sendPacket, int connection = 0)
+    public void ReplyPacket(IRPacket originalPacket, IPacket sendPacket, int connection = 0)
     {
         using var ReplayPacket = this.StartActivity("Replaying packet");
 
         ReplayPacket?.SetTag("Conenction", connection);
         ReplayPacket?.SetTag("OGCommand", originalPacket.Command);
 
-        sendPacket.WriteNewGnack(originalPacket.gnack + 2147483648);
+        sendPacket.WriteGnack(originalPacket.GNACK + 2147483648);
         Send(sendPacket, connection);
     }
 
@@ -331,4 +337,25 @@ public class Connection : IConnection
         }
     }
     public bool IsConnected(int connection = 0) => this.connections[connection] is not null;
+}
+
+public class Connection<T> where T : IConnection
+{
+    public static T Instance { get => _instance ?? throw new Exception("Instance has not been set"); }
+    private static T? _instance;// = new T();
+
+    public static void SetInstance(T i)
+    {
+        if (_instance != null) return; _instance = i;
+    }
+
+    public static void Send(IRPacket pkt, int connection = 0) => Instance.Send(pkt, connection);
+    public static void SendToAll(IRPacket pkt) => Instance.SendToAll(pkt);
+    public static void Init(string ip="", int port =0) => Instance.Init(ip, port);
+
+    public static void Disconect(int socket) => Instance.Disconect(socket);
+
+    public static Task<IRPacket?> SyncCall(IRPacket wpk, int timeOut = 1_000) => Instance.SyncCall(wpk, timeOut);
+
+    public static void DisconectAll() => Instance.DisconectAll();
 }

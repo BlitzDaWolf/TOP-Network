@@ -35,4 +35,6 @@ public interface IPacket
     public void WriteCommand(Commands commands);
 
     public byte[] GetData();
+
+    public void Final();
 }

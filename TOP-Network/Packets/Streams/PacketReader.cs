@@ -18,10 +18,6 @@ public class PacketReader
     {
         return Stream.data[Stream.Position++];
     }
-    public sbyte ReadSByte()
-    {
-        return (sbyte)Stream.data[Stream.Position++];
-    }
 
 
     public byte[] ReadBytes(int size)
@@ -50,11 +46,6 @@ public class PacketReader
         if (type == typeof(string)) return string.Join("", this.ReadBytes((short)this.ReadType(typeof(short))!).Select(x => (char)x));
         if (type == typeof(byte[])) return this.ReadBytes((short)this.ReadType(typeof(short))!);
         if (type == typeof(DateTime)) return new DateTime(this.ReadType<long>());
-        if (type == typeof(bool)) return this.ReadByte() == 1;
-
-        // byte
-        if (type == typeof(byte)) return this.ReadByte();
-        if (type == typeof(sbyte)) return this.ReadSByte();
 
         var byteLength = type.SizeOf();
 

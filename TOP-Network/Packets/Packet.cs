@@ -6,7 +6,7 @@ namespace TOP_Network.Packets;
 
 public class Packet : IPacket
 {
-    public bool LongSize { get; set; } = true;
+    public bool LongSize { get; set; } = false;
     public int StartSize => LongSize ? 4 : 2;
 
     public byte[] Data { get; private set; } = Array.Empty<byte>();
@@ -34,10 +34,18 @@ public class Packet : IPacket
 
 
     public PacketStream GetStream() => Stream;
-    public PacketReader GetReader() => Reader ?? new PacketReader(Stream);
-    public PacketWriter GetWriter() => Writer ?? new PacketWriter(Stream);
+    public PacketReader GetReader()
+    {
+        if (Reader == null) Reader = new PacketReader(Stream);
+        return Reader;
+    }
+    public PacketWriter GetWriter()
+    {
+        if (Writer == null) Writer = new PacketWriter(Stream);
+        return Writer;
+    }
 
-    public void Init(byte[] data)
+    public virtual void Init(byte[] data)
     {
         Data = data;
         Stream = new PacketStream(Data);
@@ -55,7 +63,7 @@ public class Packet : IPacket
         Data = Data.Take(Size).ToArray();
     }
 
-    public void RemoveLast(int amount)
+    public virtual void RemoveLast(int amount)
     {
         WriteSize(Size - amount);
         Data = Data.Take(Size).ToArray();
@@ -85,5 +93,14 @@ public class Packet : IPacket
         for (int i = 0; i < data.Length; i++) this.Data[i] = data[i];
     }
 
-    public byte[] GetData() =>  Data.Take(Size).ToArray();
+    public byte[] GetData() => Data.Take(Size).ToArray();
+    
+    public void Final()
+    {
+        if (Stream != null) Stream.Close();
+
+        Reader = null;
+        Writer = null;
+        Stream = null;
+    }
 }

@@ -21,23 +21,13 @@ public class PacketWriter
         for (int i = 0; i < data.Length; i++)
         {
             Stream.Position++;
-            Stream.data[Stream.Position] = data[i];
+            Stream.data[Stream.Position-1] = data[i];
         }
-    }
-
-    public void Write(bool value)
-    {
-        Write((byte)(value ? 1 : 0));
-    }
-
-    public void Write(sbyte value)
-    {
-        // sbyte to byte
-        Write((byte)value);
     }
 
     public void Write(byte data)
     {
         Stream.data[Stream.Position++] = data;
     }
+    
 }

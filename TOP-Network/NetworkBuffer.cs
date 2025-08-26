@@ -1,4 +1,5 @@
 using System;
+using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 using TOP_Utils;
 
@@ -40,12 +41,13 @@ public class NetworkBuffer
 
     public RPacket ReadPacket()
     {
-        var p = Peek(V1Packet.StartSize).Reverse().ToArray();
+        throw new NotImplementedException();
+        /*var p = Peek(V1Packet.StartSize).Reverse().ToArray();
         if (p.Length < V1Packet.StartSize) return new RPacket(new byte[V1Packet.StartSize]);
         int sz = V1Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
         if (sz < V1Packet.StartSize)return new RPacket(new byte[V1Packet.StartSize]);
         if(Remaining < sz)return new RPacket(new byte[V1Packet.StartSize]);
-        return new RPacket(ReadBuffer(sz));
+        return new RPacket(ReadBuffer(sz));*/
     }
 
     public void AddData(IEnumerable<byte> data)
@@ -53,7 +55,7 @@ public class NetworkBuffer
         this.data.AddRange(data);
     }
 
-    public void AddData(V1Packet pkt)
+    public void AddData(IPacket pkt)
     {
         AddData(pkt.GetData());
         pkt.Final();
