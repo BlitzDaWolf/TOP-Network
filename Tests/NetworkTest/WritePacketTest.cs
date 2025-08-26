@@ -2,120 +2,143 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using TOP_Network.Enum;
+using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 
 namespace NetworkTest;
 
 public class WritePacketTest
 {
-    public WritePacketTest()
-    {
-        V1Packet.LongSize = false;
-    }
-
     [Fact]
-    public void Constructor()
+    public void WriteByte()
     {
-        V1Packet.LongSize = false;
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
-        Assert.Equal(32_768, wpk.Data.Length);
-        Assert.Equal(8, wpk.Size);
-    }
+        IWPacket wpk = new WPacket();
 
-    [Fact]
-    public void ConstructorWithPacket()
-    {
-        V1Packet.LongSize = false;
-        V1Packet pkt = new V1Packet([0x00, 0x0A, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00]);
-        Assert.NotNull(pkt);
-        Assert.NotEmpty(pkt.Data);
-        HelperFunctions.HelperSize(pkt, 10);
+        wpk.WriteChar(49);
+        wpk.WriteChar(187);
+        wpk.WriteChar(161);
+        wpk.WriteChar(171);
 
-        WPacket wpk = new WPacket(pkt);
-        Assert.Equal(10, pkt.Size);
-    }
-
-    [Fact]
-    public void WriteLong()
-    {
-        V1Packet.LongSize = false;
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
-
-        wpk.WriteLong(5080);
-        Assert.Equal(V1Packet.StartSize + 6 + 4, wpk.Size);
+        Assert.Equal([0x00, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 49, 187, 161, 171], wpk.GetData());
     }
 
     [Fact]
     public void WriteShort()
     {
-        V1Packet.LongSize = false;
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
+        IWPacket wpk = new WPacket();
 
-        wpk.WriteShort(5080);
-        Assert.Equal(V1Packet.StartSize + 6 + 2, wpk.Size);
+        wpk.WriteShort(-10631);
+        wpk.WriteShort(-2439);
+
+        wpk.WriteShort(-27536);
+        wpk.WriteShort(-14557);
+
+        Assert.Equal([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD6, 0x79, 0xF6, 0x79, 0x94, 0x70, 0xC7, 0x23], wpk.GetData());
     }
 
     [Fact]
-    public void WriteChar()
+    public void WriteUShort()
     {
-        V1Packet.LongSize = false;
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
+        IWPacket wpk = new WPacket();
 
-        wpk.WriteChar(128);
-        Assert.Equal(V1Packet.StartSize + 6 + 1, wpk.Size);
+        wpk.WriteUShort(54905);
+        wpk.WriteUShort(63097);
+
+        wpk.WriteUShort(38000);
+        wpk.WriteUShort(50979);
+
+        Assert.Equal([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD6, 0x79, 0xF6, 0x79, 0x94, 0x70, 0xC7, 0x23], wpk.GetData());
+    }
+
+    [Fact]
+    public void WriteLong()
+    {
+        IWPacket wpk = new WPacket();
+
+        wpk.WriteLong(-696650119);
+        wpk.WriteLong(-1804548317);
+
+        Assert.Equal([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD6, 0x79, 0xF6, 0x79, 0x94, 0x70, 0xC7, 0x23], wpk.GetData());
+    }
+
+    [Fact]
+    public void WriteULong()
+    {
+        IWPacket wpk = new WPacket();
+
+        wpk.WriteULong(3598317177);
+        wpk.WriteULong(2490418979);
+
+        Assert.Equal([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD6, 0x79, 0xF6, 0x79, 0x94, 0x70, 0xC7, 0x23], wpk.GetData());
+    }
+
+    [Fact]
+    public void WriteLongLong()
+    {
+        IWPacket wpk = new WPacket();
+
+        wpk.WriteLongLong(-2992089475369089245);
+
+        Assert.Equal([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD6, 0x79, 0xF6, 0x79, 0x94, 0x70, 0xC7, 0x23], wpk.GetData());
+    }
+
+    [Fact]
+    public void WriteULongLong()
+    {
+        IWPacket wpk = new WPacket();
+
+        wpk.WriteULongLong(15454654598340462371);
+
+        Assert.Equal([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD6, 0x79, 0xF6, 0x79, 0x94, 0x70, 0xC7, 0x23], wpk.GetData());
+    }
+
+    [Fact]
+    public void WriteString()
+    {
+        IWPacket wpk = new WPacket();
+        wpk.WriteString("This is a test String");
+
+        Assert.Equal([0, 0x20,
+            00, 00, 00, 00, 00, 00,
+            0x00, 0x16,
+            0x54, 0x68, 0x69, 0x73, 0x20, 0x69,
+            0x73, 0x20, 0x61, 0x20, 0x74, 0x65, 0x73, 0x74, 0x20, 0x53, 0x74, 0x72, 0x69, 0x6E, 0x67, 0x00
+        ], wpk.GetData());
+    }
+
+    [Fact]
+    public void PacketConstroct()
+    {
+        IPacket packet = new Packet { LongSize = false };
+        packet.Init([0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06]);
+        HelperFunctions.HelperSize(packet, 8);
+
+        IWPacket wpk = new WPacket(packet);
+        Assert.Equal(8, wpk.Size);
+        Assert.Equal(packet.Data, wpk.GetData());
+    }
+
+    [Fact]
+    public void OverFlowWrite()
+    {
+        IWPacket wpk = new WPacket();
+        var r = new byte[1024 * 64];
+        Random.Shared.NextBytes(r);
+
+        Assert.Throws<Exception>(() => wpk.WriteSeq(r));
     }
 
     [Fact]
     public void WriteSq()
     {
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
+        IWPacket wpk = new WPacket();
+        var r = new byte[25];
+        Random.Shared.NextBytes(r);
 
-        wpk.WriteSeq([0x00, 0x01, 0x02, 0x04, 0x08, 0x10]);
-        Assert.Equal(V1Packet.StartSize + 6 + 8, wpk.Size);
-    }
+        Assert.Equal(8, wpk.Size);
 
-    [Fact]
-    public void WriteEmptyString()
-    {
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
-
-        wpk.WriteString("");
-        Assert.Equal(V1Packet.StartSize + 6 + 3, wpk.Size);
-    }
-
-    [Fact]
-    public void WriteNonTeminateString()
-    {
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
-
-        wpk.WriteString("test");
-        Assert.Equal(V1Packet.StartSize + 6 + 7, wpk.Size);
-    }
-
-    [Fact]
-    public void WriteTeminateString()
-    {
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
-
-        wpk.WriteString("test\0");
-        Assert.Equal(V1Packet.StartSize + 6 + 7, wpk.Size);
-    }
-
-    [Fact]
-    public void WriteCMD()
-    {
-        WPacket wpk = new WPacket();
-        Assert.NotEmpty(wpk.Data);
-
-        wpk.WriteCMD(TOP_Network.Enum.Commands.CMD_CM_SAY);
-        Assert.Equal(Commands.CMD_CM_SAY, wpk.Command);
+        wpk.WriteSeq(r);
+        Assert.Equal(35, wpk.Size);
+        Assert.Equal([0x00, 35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 25, .. r], wpk.GetData());
     }
 }
