@@ -7,12 +7,6 @@ namespace NetworkTest;
 
 public static class HelperFunctions
 {
-    public static void HelperSize(V1Packet pkt, int expectedSize)
-    {
-        Assert.Equal(expectedSize, pkt.Size);
-        Assert.Equal(expectedSize, pkt.Data.Length);
-    }
-
     public static void HelperSize(IPacket pkt, int expectedSize)
     {
         Assert.Equal(expectedSize, pkt.Size);

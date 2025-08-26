@@ -6,11 +6,6 @@ namespace NetworkTest;
 
 public class ReadPacketTest
 {
-    public ReadPacketTest()
-    {
-        V1Packet.LongSize = false;
-    }
-
     [Fact]
     public void GetRead()
     {
@@ -28,7 +23,6 @@ public class ReadPacketTest
     [Fact]
     public void ReadSeq()
     {
-        V1Packet.LongSize = false;
         RPacket pkt = new RPacket();
         pkt.Init([0x00, 0x0E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x04, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
@@ -42,7 +36,6 @@ public class ReadPacketTest
     [Fact]
     public void ReverseReadSeq()
     {
-        V1Packet.LongSize = false;
         RPacket pkt = new RPacket();
         pkt.Init([0x00, 0x20, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06,
             0x00, 0x14,
@@ -64,7 +57,6 @@ public class ReadPacketTest
     [Fact]
     public void ReadString()
     {
-        V1Packet.LongSize = false;
         RPacket pkt = new RPacket();
         pkt.Init([0x00, 0x1E, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06,
             0x00, 0x14,
@@ -85,7 +77,6 @@ public class ReadPacketTest
     [Fact]
     public void ReverseReadString()
     {
-        V1Packet.LongSize = false;
         RPacket pkt = new RPacket();
         pkt.Init([0x00, 0x20, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06,
             0x00, 0x14,
@@ -107,7 +98,6 @@ public class ReadPacketTest
     [Fact]
     public void UnRead()
     {
-        V1Packet.LongSize = false;
         RPacket pkt = new RPacket();
         pkt.Init([0x00, 0x0C, 0x80, 0x00, 0x00, 0x00, 0x00, 0x06, 0x15, 0xF8, 0x3D, 0x4E]);
         Assert.NotNull(pkt);
