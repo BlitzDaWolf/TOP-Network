@@ -9,8 +9,9 @@ public class NetworkBuffer
 {
     List<byte> data = new List<byte>();
 
+
     private int ToRemove = 0;
-    private int Remaining => data.Count - ToRemove;
+    public int Remaining => data.Count - ToRemove;
     public bool EOF => Remaining == 0;
 
     public void SafeStep()
@@ -26,7 +27,7 @@ public class NetworkBuffer
 
     public byte[] ReadBuffer(int size)
     {
-        if (Remaining < size) return Array.Empty<byte>();
+        if (Remaining < size) throw new Exception("Not enough bites in the buffer");
         var buff = data.Skip(ToRemove).Take(size).ToArray();
         ToRemove += size;
         return buff;
@@ -39,15 +40,16 @@ public class NetworkBuffer
 
     public byte[] Peek(int size) => data.Skip(ToRemove).Take(size).ToArray();
 
-    public RPacket ReadPacket()
+    public IRPacket ReadPacket()
     {
-        throw new NotImplementedException();
-        /*var p = Peek(Packet.StartSize).Reverse().ToArray();
-        if (p.Length < Packet.StartSize) return new RPacket(new byte[Packet.StartSize]);
-        int sz = Packet.LongSize? (int)BitConverter.ToUInt32(p, 0): (int)BitConverter.ToUInt16(p, 0);
-        if (sz < Packet.StartSize)return new RPacket(new byte[Packet.StartSize]);
-        if(Remaining < sz)return new RPacket(new byte[Packet.StartSize]);
-        return new RPacket(ReadBuffer(sz));*/
+        var p = Peek(2);// Dynamic sizing
+        if (p.Length < 2) throw new Exception("Not packet size");
+        IPacket sizePacket = new Packet();
+        sizePacket.Init(p);
+        if (sizePacket.Size > Remaining) throw new Exception("Packet in in buffer");
+        IRPacket retunValue = new RPacket();
+        retunValue.Init(ReadBuffer(sizePacket.Size));
+        return retunValue;
     }
 
     public void AddData(IEnumerable<byte> data)

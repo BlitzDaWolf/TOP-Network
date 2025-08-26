@@ -20,7 +20,7 @@ public class Connection : IConnection
 
     public Dictionary<uint, IRPacket?> Calls { get; private set; } = new Dictionary<uint, IRPacket?>();
 
-    public Connection(ILogger<Connection> logger, int maxClients = 10)
+    public Connection (ILogger<Connection> logger, int maxClients = 10)
     {
         connections = new NetworkConnection?[maxClients];
         _logger = logger;
