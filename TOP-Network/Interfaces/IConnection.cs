@@ -29,9 +29,9 @@ public interface IConnection
     public Task KeepAlive();
 
     public void Send(IPacket pkt, int connection = 0);
-    public void SendToAll(IRPacket pkt);
+    public void SendToAll(IPacket pkt);
 
-    public Task<IRPacket?> SyncCall(IRPacket pkt, int timeOut = 10_000, int connection = 0);
+    public Task<IRPacket?> SyncCall(IPacket pkt, int timeOut = 10_000, int connection = 0);
     public void ReplyPacket(IRPacket originalPacket, IPacket sendPacket, int connection = 0);
 
     public int FindEmpty();

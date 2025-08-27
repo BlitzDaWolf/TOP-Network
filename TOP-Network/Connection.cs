@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
+using TOP_Network.Exceptions;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
@@ -29,19 +31,12 @@ public class Connection : IConnection
         this.conectionFactory = conectionFactory;
     }
 
-    public Connection()
-    {
-    }
-
     public uint PacketId { get; private set; }
 
     public void Init(string IP = "", int port = 0)
     {
-        if (string.IsNullOrEmpty(IP) || port <= 0)
-        {
-            _logger.LogDebug("custom init Exception");
-            throw new Exception("Not an valid IP or port was given");
-        }
+        if (string.IsNullOrEmpty(IP)) throw new InvalidIPInitException("Empty IP was given");
+        if (port <= 0) throw new InvalidPortInitException("Not an valid port was given");
 
         this.Port = port;
         this.IP = IPAddress.Parse(IP);
@@ -149,7 +144,7 @@ public class Connection : IConnection
         
     }
 
-    public void SendToAll(IRPacket pkt)
+    public void SendToAll(IPacket pkt)
     {
         using var SendToAll = this.StartActivity("Send to all");
         for (int i = 0; i < connections.Length; i++)
@@ -158,7 +153,7 @@ public class Connection : IConnection
         }
     }
 
-    public async Task<IRPacket?> SyncCall(IRPacket pkt, int timeOut = 10_000, int connection = 0)
+    public async Task<IRPacket?> SyncCall(IPacket pkt, int timeOut = 10_000, int connection = 0)
     {
         return null;
     }
@@ -181,6 +176,7 @@ public class Connection : IConnection
     public bool IsConnected(int connection = 0) => this.connections[connection] is not null;
 }
 
+[ExcludeFromCodeCoverage]
 public class Connection<T> where T : IConnection
 {
     public static T Instance { get => _instance ?? throw new Exception("Instance has not been set"); }

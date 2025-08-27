@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using TOP_Network;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Network;
@@ -15,6 +16,11 @@ public class TestConenctionFactory<TBuffer> : IConectionFactory where TBuffer : 
     }
 
     public INetworkConnection CreateConnection()
+    {
+        throw new NotImplementedException();
+    }
+
+    public INetworkConnection AcceptConnection(IPAddress ip, int port)
     {
         throw new NotImplementedException();
     }

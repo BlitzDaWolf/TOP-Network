@@ -15,11 +15,6 @@ public class TestClientConnection : Connection, IConnection
     public TestClientConnection(ILogger<TestClientConnection> logger, IConectionFactory conectionFactory)
         : base(logger, conectionFactory, 1) { }
 
-    public TestClientConnection()
-    {
-
-    }
-
     public override Task OnConnected()
     {
         ConnectedCall++;

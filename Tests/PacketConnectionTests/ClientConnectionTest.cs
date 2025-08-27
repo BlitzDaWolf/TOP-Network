@@ -1,6 +1,3 @@
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PacketConnectionTests.Abstractions;
 using PacketConnectionTests.Abstractions.Streams;
@@ -18,6 +15,14 @@ public class ClientConnectionTest
     public ClientConnectionTest()
     {
         TestLogger = LoggerFactory.Create(conf => conf.ClearProviders()).CreateLogger<TestClientConnection>();
+    }
+
+    [Fact]
+    public async Task StartClientException()
+    {
+        TestNetworkStream stream = new TestNetworkStream();
+        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        await Assert.ThrowsAsync<Exception>(() => connection.StartAsClient());
     }
 
     [Fact]
@@ -57,14 +62,6 @@ public class ClientConnectionTest
         await Task.Delay(500);
         Assert.False(connection.IsConnected());
         Assert.Equal(1, connection.DisconnectedCall);
-    }
-
-    [Fact]
-    public async Task StartClientException()
-    {
-        TestNetworkStream stream = new TestNetworkStream();
-        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
-        await Assert.ThrowsAsync<Exception>(() => connection.StartAsClient());
     }
 
     [Fact]
@@ -223,5 +220,63 @@ public class ClientConnectionTest
         connection.Disconect(0);
         Assert.False(connection.IsConnected());
         Assert.Equal(1, connection.DisconnectedCall);
+    }
+
+    [Fact]
+    public async Task SyncCall()
+    {
+        IWPacket wpk = new WPacket();
+        byte[] d = new byte[68];
+        Random.Shared.NextBytes(d);
+        wpk.WriteSeq(d);
+
+
+
+        TestNetworkStream stream = new TestNetworkStream();
+        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        connection.Init("127.0.0.1", 1234);
+
+        Assert.Equal(1234, connection.Port);
+        Assert.Equal("127.0.0.1", connection.IP.ToString());
+
+        _ = connection.StartAsClient();
+        await Task.Delay(TimeSpan.FromSeconds(1));
+
+        Assert.False(connection.IsServer);
+        Assert.True(connection.IsConnected());
+
+        var response = await connection.SyncCall(wpk);
+        Assert.NotNull(response);
+        Assert.Equal(2147483648, response.GNACK);
+
+        wpk.WriteGnack(response.GNACK);
+        Assert.Equal(wpk.GetData(), response.Data);
+    }
+
+    [Fact]
+    public async Task SyncFailCall()
+    {
+        IWPacket wpk = new WPacket();
+        byte[] d = new byte[68];
+        Random.Shared.NextBytes(d);
+        wpk.WriteSeq(d);
+
+
+
+        TestNetworkStream stream = new TestNetworkStream();
+        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        connection.Init("127.0.0.1", 1234);
+
+        Assert.Equal(1234, connection.Port);
+        Assert.Equal("127.0.0.1", connection.IP.ToString());
+
+        _ = connection.StartAsClient();
+        await Task.Delay(TimeSpan.FromSeconds(1));
+
+        Assert.False(connection.IsServer);
+        Assert.True(connection.IsConnected());
+
+        var response = await connection.SyncCall(wpk);
+        Assert.Null(response);
     }
 }
