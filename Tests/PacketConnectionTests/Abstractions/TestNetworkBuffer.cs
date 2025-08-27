@@ -2,23 +2,19 @@ using System;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
-using TOP_Utils;
 
-namespace TOP_Network;
+namespace PacketConnectionTests.Abstractions;
 
-public class NetworkBuffer : INetworkBuffer
+public class TestNetworkBuffer : INetworkBuffer
 {
     public List<byte> Data { get; private set; } = new List<byte>();
 
-
     private int ToRemove = 0;
     public int Remaining => Data.Count - ToRemove;
-    public bool EOF => Remaining == 0;
+    public virtual bool EOF => Remaining == 0;
 
     public void SafeStep()
     {
-        using var stepActiveit = this.StartActivity("safeStep");
-        stepActiveit?.SetTag("remove", ToRemove);
         lock (Data)
         {
             Data.RemoveRange(0, ToRemove);
@@ -41,15 +37,10 @@ public class NetworkBuffer : INetworkBuffer
 
     public byte[] Peek(int size) => Data.Skip(ToRemove).Take(size).ToArray();
 
-    public IRPacket ReadPacket()
+    public virtual IRPacket ReadPacket()
     {
-        var p = Peek(2);// Dynamic sizing
-        if (p.Length < 2) throw new Exception("Not packet size");
-        IPacket sizePacket = new Packet();
-        sizePacket.Init(p);
-        if (sizePacket.Size > Remaining) throw new Exception("Packet in in buffer");
         IRPacket retunValue = new RPacket();
-        retunValue.Init(ReadBuffer(sizePacket.Size));
+        retunValue.Init([0, 2]);
         return retunValue;
     }
 

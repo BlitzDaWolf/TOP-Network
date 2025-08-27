@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 using TOP_Utils;
@@ -11,19 +12,25 @@ namespace TOP_Network;
 public class Connection : IConnection
 {
     private readonly ILogger<Connection> _logger;
+    private readonly IConectionFactory conectionFactory;
 
     public bool IsServer { get; private set; } = false;
     public IPAddress IP { get; set; } = IPAddress.Any;
     public int Port { get; set; }
 
-    public NetworkConnection?[] connections { get; private set; }
+    public INetworkConnection?[] connections { get; private set; }
 
     public Dictionary<uint, IRPacket?> Calls { get; private set; } = new Dictionary<uint, IRPacket?>();
 
-    public Connection (ILogger<Connection> logger, int maxClients = 10)
+    public Connection(ILogger<Connection> logger, IConectionFactory conectionFactory, int maxClients = 10)
     {
-        connections = new NetworkConnection?[maxClients];
+        connections = new INetworkConnection?[maxClients];
         _logger = logger;
+        this.conectionFactory = conectionFactory;
+    }
+
+    public Connection()
+    {
     }
 
     public uint PacketId { get; private set; }
@@ -45,42 +52,18 @@ public class Connection : IConnection
 
     public async Task StartAsServer()
     {
+        if (IP == IPAddress.Any || Port == 0) throw new Exception("Server has not been initialized");
+
         IsServer = true;
-        try
-        {
-            TcpListener listener = new TcpListener(IP, Port);
-            listener.Start();
-
-            _logger.LogInformation("Listening in: {0}:{1}", IP, Port);
-
-            while (true)
-            {
-                TcpClient client = await listener.AcceptTcpClientAsync();
-                _ = Task.Run(() => Connect(client));
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.LogError($"Error for listening: {IP}:{Port}");
-            _logger.LogTrace(e.ToString());
-        }
     }
 
     public async Task StartAsClient()
     {
-        while (true)
-        {
-            try
-            {
-                _logger.LogInformation("Trying to connect to {0}:{1}", IP, Port);
-                IsServer = false; // Ensure the flag is set to false
-                TcpClient client = new TcpClient(IP.ToString(), Port);
-                await Task.Run(() => Connect(client));
-                await Task.Delay(500);
-            }
-            catch { }
-            await Task.Delay(TimeSpan.FromSeconds(15));
-        }
+        if (IP == IPAddress.Any || Port == 0) throw new Exception("Client has not been initialized");
+        INetworkConnection client = conectionFactory.CreateConnection();
+        Thread t = new Thread(async () => await Connect(client));
+        t.Start();
+        await Task.Delay(1);
     }
 
     public virtual void Start() { }
@@ -95,15 +78,7 @@ public class Connection : IConnection
 
     public async Task HandelPacket(IRPacket packet, int connection)
     {
-        if (Calls.ContainsKey(packet.GNACK))
-        {
-            Calls[packet.GNACK] = packet;
-            return;
-        }
-
-        var result = await OnHandelPacket(packet, connection);
-        throw new NotImplementedException();
-        // if (result != null) Send(packet, connection);
+        
     }
 
     public async Task KeepAlive()
@@ -117,109 +92,47 @@ public class Connection : IConnection
             for (int i = 0; i < connections.Length; i++)
             {
                 if (!IsConnected(i)) continue;
-                var stream = connections[i]!.Value!.Stream;
-                await stream.WriteAsync(p.Data, 0, p.Size);
-                await stream.FlushAsync();
+                
             }
         }
     }
 
-    public async Task Connect(TcpClient Client)
+    public async Task Connect(INetworkConnection Client)
     {
-        await Task.Delay(1);
-        _logger.LogDebug("Implement connection logic");
-        var emptyValue =  FindEmpty();
-        if (emptyValue == -1)
-        {
-            _logger.LogWarning("No valid place found");
-            return;
-        }
-        _logger.LogDebug("Find empty spot");
-        connections[emptyValue] = new NetworkConnection
-        {
-            Client = Client,
-            ReciveBuffer = new NetworkBuffer(),
-            SendBuffer = new NetworkBuffer(),
-            Stream = Client.GetStream()
-        };
-        NetworkConnection currentConenction = connections[emptyValue]!.Value;
+        _logger.LogInformation("Conenction has been made");
 
-
-        using (var connecting = this.StartActivity("OnConnect"))
+        var emptySpot = FindEmpty();
+        if (emptySpot == -1)
         {
-            _ = OnConnected();
-            _ = OnConnected(emptyValue);
+            throw new Exception("No empty spots where found");
         }
+
 
         try
         {
-            _logger.LogDebug("Start reciving loop");
-            _ = Task.Run(async () =>
+            connections[emptySpot] = Client;
+
+            using (var act = this.StartActivity("On connected"))
             {
-                try
-                {
-                    byte[] buffer = new byte[32_768];
-                    int bytesRead = 0;
-                    while ((bytesRead = await currentConenction.Stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                    {
-                        currentConenction.ReciveBuffer.AddData(buffer.Take(bytesRead));
-                    }
-                }
-                catch { }
-
-
-            });
-
-            _logger.LogDebug("Start handle/send loop");
-            int cnt = 0;
-            while (IsConnected(emptyValue))
-            {
-                int hasData = (currentConenction.ReciveBuffer.EOF ? 0 : 1) + (currentConenction.SendBuffer.EOF ? 0 : 2);
-                if (hasData >= 2)
-                {
-                    currentConenction.Stream.Write(currentConenction.SendBuffer.ReadAll());
-                    currentConenction.Stream.Flush();
-                    currentConenction.SendBuffer.SafeStep();
-                }
-                if (hasData == 0)
-                {
-                    await Task.Delay(10);
-                }
-                else if (hasData % 2 == 1)
-                {
-                    var currentPacket = currentConenction.ReciveBuffer.ReadPacket();
-                    if (currentPacket.Size < currentPacket.StartSize) { } // Invalid packet skip
-                    else if (currentPacket.Size == currentPacket.StartSize)
-                    {
-                        throw new NotImplementedException();
-                        // if (IsServer) Send(currentPacket, emptyValue);
-                    }
-                    else
-                    {
-                        cnt++;
-                        cnt %= 10;
-                        _ = HandelPacket(currentPacket, emptyValue);
-
-                        if (cnt == 0)
-                        {
-                            currentConenction.ReciveBuffer.SafeStep();
-                        }
-                    }
-                }
+                _ = OnConnected();
+                _ = OnConnected(emptySpot);
             }
+
+            Client.OnPacketRecive += (pkt) => _ = HandelPacket(pkt, emptySpot);
+            var a = Task.WaitAny(Client.ReciveLoop(), Client.SendLoop());
+
         }
-        catch
+        catch (Exception e)
         {
 
         }
         finally
         {
-            _logger.LogDebug("Close out connection {0}", emptyValue);
-            await OnDisconect(emptyValue);
-            currentConenction.Close();
-            connections[emptyValue] = null;
+            _logger.LogInformation("Connection [{0}] has been closed", emptySpot);
+            Client.Close();
+            connections[emptySpot] = null;
+            await OnDisconect(emptySpot);
         }
-
     }
 
     public int FindEmpty()
@@ -233,52 +146,7 @@ public class Connection : IConnection
 
     public void Send(IPacket pkt, int connection)
     {
-        throw new NotImplementedException();
-        /*if (pkt.Size < 0) return; // Invalid packet Size
-        using var SendActivity = this.StartActivity("Sending packet");
-        SendActivity?.SetTag("Size", pkt.Size);
-        SendActivity?.SetTag("Encrypted", false); // Todo implement encryption function
-
-        if (!IsConnected(connection)) return;
-        var currentConnection = connections[connection]!.Value;
-
-
-        if (pkt.Size < 6 + Packet.StartSize)
-        {
-            // Ping
-            SendActivity?.SetTag("Command", "PING");
-            SendActivity?.SetTag("Ping", true);
-        }
-        else
-        {
-            SendActivity?.SetTag("Command", pkt.Command);
-            SendActivity?.SetTag("Ping", false);
-            if (currentConnection.SendTrace)
-            {
-                // If shareActivity
-                var wpk = new WPacket(pkt);
-                if (SendActivity != null)
-                {
-                    var id = SendActivity?.Id!.ToString()!;
-
-                    var sz = wpk.WriteString(id);
-                    wpk.WriteShort((short)(sz));
-                    pkt = wpk.Clone();
-                }
-            }
-        }
-
-        if (connections[connection] is not null)
-        {
-            connections[connection]!.Value.SendBuffer.AddData(pkt);
-        }
-        else
-        {
-            _logger.LogWarning("[{1}] No conenction has been made at socket: {0}", connection, GetType().Name);
-        }
-
-        pkt.Final();
-        */
+        
     }
 
     public void SendToAll(IRPacket pkt)
@@ -292,42 +160,16 @@ public class Connection : IConnection
 
     public async Task<IRPacket?> SyncCall(IRPacket pkt, int timeOut = 10_000, int connection = 0)
     {
-        using var SyncActivity = this.StartActivity("Sync call");
-        SyncActivity?.SetTag("Conenction", connection);
-        SyncActivity?.SetTag("Command", pkt.Command);
-        // pkt.AddRandomGnack();
-        pkt.WriteGnack(++PacketId);
-        uint test = pkt.GNACK + 2147483648;
-
-        Send(pkt, connection);
-        Calls.Add(test, null);
-        var delay = Task.Delay(timeOut);
-        using var WaitForReply = this.StartActivity("Sync wait");
-        while (Calls[test] == null && !delay.IsCompleted)
-        {
-            await Task.Delay(1);
-        }
-        var result = Calls[test];
-        Calls.Remove(test);
-        if (result == null)
-            WaitForReply?.SetStatus(ActivityStatusCode.Error);
-        return result;
+        return null;
     }
     public void ReplyPacket(IRPacket originalPacket, IPacket sendPacket, int connection = 0)
     {
-        using var ReplayPacket = this.StartActivity("Replaying packet");
-
-        ReplayPacket?.SetTag("Conenction", connection);
-        ReplayPacket?.SetTag("OGCommand", originalPacket.Command);
-
-        sendPacket.WriteGnack(originalPacket.GNACK + 2147483648);
-        Send(sendPacket, connection);
+        
     }
 
     public void Disconect(int connection = 0)
     {
-        if (connections[connection] is null) return;
-        connections[connection]!.Value.Close();
+        
     }
     public void DisconectAll()
     {

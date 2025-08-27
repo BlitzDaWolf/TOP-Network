@@ -1,4 +1,5 @@
 using System.Net;
+using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
 
 namespace TOP_Network;
@@ -9,7 +10,7 @@ public interface IConnection
     public IPAddress IP { get; set; }
     public int Port { get; set; }
 
-    public NetworkConnection?[] connections { get; }
+    public INetworkConnection?[] connections { get; }
     public Dictionary<uint, IRPacket?> Calls { get; }
     public uint PacketId { get; }
 
