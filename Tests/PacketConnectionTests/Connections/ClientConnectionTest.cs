@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Logging;
 using PacketConnectionTests.Abstractions;
-using PacketConnectionTests.Abstractions.Streams;
+using PacketConnectionTests.Abstractions.Facotries;
 using TOP_Network;
-using TOP_Network.Interfaces.Network;
 using TOP_Network.Interfaces.Packets;
 using TOP_Network.Packets;
 
-namespace PacketConnectionTests;
+namespace PacketConnectionTests.Connections;
 
 public class ClientConnectionTest
 {
@@ -20,23 +19,22 @@ public class ClientConnectionTest
     [Fact]
     public async Task StartClientException()
     {
-        TestNetworkStream stream = new TestNetworkStream();
-        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        
+        IConnection connection = new TestClientConnection(TestLogger, new EmptyConnectionFactory());
         await Assert.ThrowsAsync<Exception>(() => connection.StartAsClient());
     }
 
     [Fact]
     public async Task StartClient()
     {
-        INetworkStream stream = new TestNetworkStream();
-        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        IConnection connection = new TestClientConnection(TestLogger, new NormalConnectionFactory());
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
         Assert.Equal("127.0.0.1", connection.IP.ToString());
 
         _ = connection.StartAsClient();
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(0.5));
 
         Assert.False(connection.IsServer);
         Assert.True(connection.IsConnected());
@@ -45,21 +43,19 @@ public class ClientConnectionTest
     [Fact]
     public async Task OnDisconect()
     {
-        TestNetworkStream stream = new TestNetworkStream();
-        TestClientConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        TestClientConnection connection = new TestClientConnection(TestLogger, new NormalConnectionFactory{timing = 1});
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
         Assert.Equal("127.0.0.1", connection.IP.ToString());
 
         _ = connection.StartAsClient();
-        await Task.Delay(TimeSpan.FromSeconds(1));
+        await Task.Delay(TimeSpan.FromSeconds(0.5));
 
         Assert.False(connection.IsServer);
         Assert.True(connection.IsConnected());
 
-        stream.Step();
-        await Task.Delay(500);
+        await Task.Delay(800);
         Assert.False(connection.IsConnected());
         Assert.Equal(1, connection.DisconnectedCall);
     }
@@ -74,8 +70,7 @@ public class ClientConnectionTest
         d[1] = 68;
 
 
-        RandomNetworkStream stream = new RandomNetworkStream(d);
-        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        IConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -87,7 +82,6 @@ public class ClientConnectionTest
         Assert.False(connection.IsServer);
         Assert.True(connection.IsConnected());
 
-        stream.Step();
         await Task.Delay(500);
         Assert.True(connection.IsConnected());
 
@@ -105,9 +99,7 @@ public class ClientConnectionTest
         Random.Shared.NextBytes(d);
         wpk.WriteSeq(d);
 
-
-        RandomNetworkStream stream = new RandomNetworkStream(wpk.GetData());
-        TestClientConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        TestClientConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -119,7 +111,6 @@ public class ClientConnectionTest
         Assert.False(connection.IsServer);
         Assert.True(connection.IsConnected());
 
-        stream.Step();
         await Task.Delay(500);
         Assert.True(connection.IsConnected());
 
@@ -136,8 +127,8 @@ public class ClientConnectionTest
     [Fact]
     public async Task OnConnectedCalled()
     {
-        TestNetworkStream stream = new TestNetworkStream();
-        TestClientConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        
+        TestClientConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -155,8 +146,8 @@ public class ClientConnectionTest
     [Fact]
     public async Task PacketHandle()
     {
-        TestNetworkStream stream = new TestNetworkStream();
-        TestClientConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        
+        TestClientConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -174,8 +165,8 @@ public class ClientConnectionTest
     [Fact]
     public async Task SendPacket()
     {
-        TestNetworkStream stream = new TestNetworkStream();
-        TestClientConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        
+        TestClientConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -204,8 +195,7 @@ public class ClientConnectionTest
     [Fact]
     public async Task Disconect()
     {
-        TestNetworkStream stream = new TestNetworkStream();
-        TestClientConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        TestClientConnection connection = new TestClientConnection(TestLogger, new DisconectConnectionFactory());
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -218,6 +208,9 @@ public class ClientConnectionTest
         Assert.True(connection.IsConnected());
 
         connection.Disconect(0);
+
+        await Task.Delay(100);
+
         Assert.False(connection.IsConnected());
         Assert.Equal(1, connection.DisconnectedCall);
     }
@@ -232,8 +225,8 @@ public class ClientConnectionTest
 
 
 
-        TestNetworkStream stream = new TestNetworkStream();
-        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        
+        IConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);
@@ -263,8 +256,8 @@ public class ClientConnectionTest
 
 
 
-        TestNetworkStream stream = new TestNetworkStream();
-        IConnection connection = new TestClientConnection(TestLogger, new TestConenctionFactory<TestNetworkBuffer>(stream));
+        
+        IConnection connection = new TestClientConnection(TestLogger, null);
         connection.Init("127.0.0.1", 1234);
 
         Assert.Equal(1234, connection.Port);

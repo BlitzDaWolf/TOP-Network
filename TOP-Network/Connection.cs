@@ -48,16 +48,25 @@ public class Connection : IConnection
     public async Task StartAsServer()
     {
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Server has not been initialized");
-
         IsServer = true;
+
+        new Thread(async () =>
+        {
+            conectionFactory.StartListener(IP, Port);
+
+            while (true)
+            {
+                var client = await conectionFactory.AcceptConnection();
+                new Thread(async () => await Connect(client)).Start();
+            }
+        }).Start();
     }
 
     public async Task StartAsClient()
     {
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Client has not been initialized");
         INetworkConnection client = conectionFactory.CreateConnection();
-        Thread t = new Thread(async () => await Connect(client));
-        t.Start();
+        new Thread(async () => await Connect(client)).Start();
         await Task.Delay(1);
     }
 
@@ -99,7 +108,9 @@ public class Connection : IConnection
         var emptySpot = FindEmpty();
         if (emptySpot == -1)
         {
-            throw new Exception("No empty spots where found");
+            _logger.LogInformation("Max clients hit");
+            return;
+            // throw new Exception("No empty spots where found");
         }
 
 
@@ -141,7 +152,8 @@ public class Connection : IConnection
 
     public void Send(IPacket pkt, int connection)
     {
-        
+        if (!IsConnected(connection)) return; // Connection is disconected 
+        connections[connection]!.SendBuffer.AddData(pkt);
     }
 
     public void SendToAll(IPacket pkt)
@@ -164,7 +176,9 @@ public class Connection : IConnection
 
     public void Disconect(int connection = 0)
     {
-        
+        if (!IsConnected(connection)) return; // Already disconected 
+        connections[connection]!.Close();
+        connections[connection] = null;
     }
     public void DisconectAll()
     {
