@@ -22,11 +22,11 @@ public class Packet : IPacket
     public int Size => (int)(LongSize ? BitConverter.ToUInt32(Data.Take(StartSize).Reverse().ToArray(), 0) : BitConverter.ToUInt16(Data.Take(StartSize).Reverse().ToArray(), 0));
     public Commands Command => (Commands)BitConverter.ToInt16(Data.Skip(StartSize + 4).Take(2).Reverse().ToArray());
 
-    public IPacket Clone<T>() where T : IPacket, new()
+    public TPacket Clone<TPacket>() where TPacket : IPacket, new()
     {
-        var pkt = new T();
+        var pkt = new TPacket();
 
-        pkt.Init(Data);
+        pkt.Init(GetData());
         pkt.LongSize = LongSize;
 
         return pkt;

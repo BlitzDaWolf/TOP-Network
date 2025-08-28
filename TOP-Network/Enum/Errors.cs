@@ -3,7 +3,6 @@
     public enum Errors
     {
         ERR_SUCCESS = 0,
-        ERR_MC_BASE = 0,
         ERR_PT_BASE = 500,
         ERR_AP_BASE = 1000,
         ERR_MT_BASE = 1500,

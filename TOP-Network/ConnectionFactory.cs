@@ -28,7 +28,7 @@ public class ConectionFactory : IConectionFactory
 
         public void Close()
         {
-            throw new NotImplementedException();
+            Stream.Close();
         }
 
         public async Task ReciveLoop()

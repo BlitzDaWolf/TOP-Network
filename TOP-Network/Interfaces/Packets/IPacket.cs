@@ -26,7 +26,7 @@ public interface IPacket
     public PacketReader GetReader();
     public PacketWriter GetWriter();
 
-    public IPacket Clone<T>() where T : IPacket, new();
+    public TPacket Clone<TPacket>() where TPacket : IPacket, new();
     public void RemoveLast(int amount);
     public void Remove(int amount);
 
