@@ -17,7 +17,7 @@ public interface IConnection
     public void Init(string IP = "", int port = 0);
 
     public Task StartAsServer();
-    public Task StartAsClient();
+    public Task StartAsClient(bool waitTillExit = false);
 
     public void Start();
     public Task OnConnected();

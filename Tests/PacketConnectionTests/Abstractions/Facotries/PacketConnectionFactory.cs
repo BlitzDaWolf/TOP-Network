@@ -61,7 +61,7 @@ public class PacketConnectionFactory : IConectionFactory
         return Default;
     }
 
-    public INetworkConnection CreateConnection()
+    public INetworkConnection CreateConnection(IPAddress ip, int port)
     {
         return Default;
     }

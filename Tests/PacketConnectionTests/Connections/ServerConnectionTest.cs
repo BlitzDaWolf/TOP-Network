@@ -83,7 +83,7 @@ public class ServerConnectionTest
         IConnection connection = new TestServerConnection(TestLogger, factory);
         connection.Init("192.167.0.1", 789);
 
-        await connection.StartAsServer();
+        _= connection.StartAsServer();
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         // Connect client 1

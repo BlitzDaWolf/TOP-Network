@@ -33,7 +33,7 @@ public class EmptyConnectionFactory : IConectionFactory
         return new EmptyNetowrkConnection();        
     } 
 
-    public INetworkConnection CreateConnection() => new EmptyNetowrkConnection();
+    public INetworkConnection CreateConnection(IPAddress ip, int port) => new EmptyNetowrkConnection();
 
     public void StartListener(IPAddress ip, int port)
     { }

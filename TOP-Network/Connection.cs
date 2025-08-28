@@ -24,6 +24,8 @@ public class Connection : IConnection
 
     public Dictionary<uint, IRPacket?> Calls { get; private set; } = new Dictionary<uint, IRPacket?>();
 
+    private Task? RunningLoop;
+
     public Connection(ILogger<Connection> logger, IConectionFactory conectionFactory, int maxClients = 10)
     {
         connections = new INetworkConnection?[maxClients];
@@ -40,6 +42,8 @@ public class Connection : IConnection
 
         this.Port = port;
         this.IP = IPAddress.Parse(IP);
+
+        Start();
     }
 
     public async Task StartAsServer()
@@ -47,29 +51,37 @@ public class Connection : IConnection
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Server has not been initialized");
         IsServer = true;
 
-        new Thread(async () =>
+        conectionFactory.StartListener(IP, Port);
+        try
         {
-            conectionFactory.StartListener(IP, Port);
-
-            _logger.LogInformation("Listening in: {0}:{1}", IP, Port);
+            List<Task> connections = new List<Task>();
 
             _ = KeepAlive();
-
+            _logger.LogInformation("Listening in: {0}:{1}", IP, Port);
             while (true)
             {
                 var client = await conectionFactory.AcceptConnection();
-                new Thread(async () => await Connect(client)).Start();
+                new Thread(() => Connect(client).Wait()).Start();
             }
-        }).Start();
+        }
+        catch (Exception e)
+        {
 
-        await Task.Delay(1);
+        }
+
+        var enbd = "";
     }
 
-    public async Task StartAsClient()
+    public async Task StartAsClient(bool waitTillExit = false)
     {
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Client has not been initialized");
-        INetworkConnection client = conectionFactory.CreateConnection();
-        new Thread(async () => await Connect(client)).Start();
+        INetworkConnection client = conectionFactory.CreateConnection(IP, Port);
+        Thread t = new Thread(async () => await Connect(client));
+        t.Start();
+        if (waitTillExit)
+        {
+            t.Join();
+        }
         await Task.Delay(1);
     }
 
@@ -85,6 +97,11 @@ public class Connection : IConnection
 
     public async Task HandelPacket(IRPacket packet, int connection)
     {
+        if (packet.Size == 2)
+        {
+            if (!IsServer) Send(packet, connection); 
+            return;
+        }
         if (Calls.ContainsKey(packet.GNACK))
         {
             Calls[packet.GNACK] = packet;
@@ -104,18 +121,26 @@ public class Connection : IConnection
         p.Init([ 0x00, 0x02 ]);
         while (true)
         {
-            await Task.Delay(2000);
-            // foreach (var a in connections)
-            for (int i = 0; i < connections.Length; i++)
+            try
             {
-                if (!IsConnected(i)) continue;
-                Send(p, i);
+                await Task.Delay(2000);
+                // foreach (var a in connections)
+                for (int i = 0; i < connections.Length; i++)
+                {
+                    if (!IsConnected(i)) continue;
+                    Send(p, i);
+                }
+            }
+            catch
+            {
+                
             }
         }
     }
 
     public async Task Connect(INetworkConnection Client)
     {
+        await Task.Delay(100);
         _logger.LogInformation("Conenction has been made");
 
         var emptySpot = FindEmpty();
