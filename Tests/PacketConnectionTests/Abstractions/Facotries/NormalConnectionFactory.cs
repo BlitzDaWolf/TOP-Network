@@ -50,7 +50,7 @@ public class NormalConnectionFactory : IConectionFactory
         return new NormalNetowrkConnection{timing = timing};
     }
 
-    public INetworkConnection CreateConnection()
+    public INetworkConnection CreateConnection(IPAddress ip, int port)
     {
         return new NormalNetowrkConnection{timing = timing};
     }

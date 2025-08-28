@@ -59,11 +59,11 @@ public class ConectionFactory : IConectionFactory
                 if (hasData % 2 == 1)
                 {
                     IRPacket currentpacket = ReciveBuffer.ReadPacket();
-                    if (currentpacket.Size == currentpacket.StartSize)
+                    /*if (currentpacket.Size == currentpacket.StartSize)
                     {
                         SendBuffer.AddData(currentpacket);
                     }
-                    else
+                    else*/
                     {
                         OnPacketRecive(currentpacket);
                         cnt++;
@@ -106,15 +106,21 @@ public class ConectionFactory : IConectionFactory
 
     public async Task<INetworkConnection> AcceptConnection()
     {
-        TcpClient tcClient = await listener!.AcceptTcpClientAsync();
-        return new NetworkConnection(new NetworkStream(tcClient));
+        try
+        {
+            TcpClient tcClient = await listener!.AcceptTcpClientAsync();
+            return new NetworkConnection(new NetworkStream(tcClient));
+        }
+        catch
+        {
+            throw;
+        }
     }
 
-    public INetworkConnection CreateConnection()
+    public INetworkConnection CreateConnection(IPAddress ip, int port)
     {
-        TcpClient client = new TcpClient("", 1);
-
-        throw new NotImplementedException();
+        TcpClient client = new TcpClient(ip.ToString(), port);
+        return new NetworkConnection(new NetworkStream(client));
     }
 
     public void StartListener(IPAddress ip, int port)

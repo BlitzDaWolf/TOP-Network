@@ -51,7 +51,7 @@ public class DisconectConnectionFactory : IConectionFactory
         return new DisconectNetowrkConnection();
     }
 
-    public INetworkConnection CreateConnection()
+    public INetworkConnection CreateConnection(IPAddress ip, int port)
     {
         return new DisconectNetowrkConnection();
     }
