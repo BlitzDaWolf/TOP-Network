@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using TOP_Network;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Network;
 using TOP_Network.Interfaces.Packets;
@@ -10,9 +11,9 @@ public class DisconectConnectionFactory : IConectionFactory
 {
     public class DisconectNetowrkConnection : INetworkConnection
     {
-        public Action<IRPacket> OnPacketRecive { get; set; }
-        public INetworkBuffer ReciveBuffer { get; set; }
-        public INetworkBuffer SendBuffer { get; set; }
+        public Action<IRPacket> OnPacketRecive { get; set; } = _ => { };
+        public INetworkBuffer ReciveBuffer { get; set; } = new NetworkBuffer();
+        public INetworkBuffer SendBuffer { get; set; } = new NetworkBuffer();
 
         public INetworkStream Stream { get; }
 

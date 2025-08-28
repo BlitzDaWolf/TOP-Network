@@ -12,7 +12,7 @@ public class NormalConnectionFactory : IConectionFactory
     public class NormalNetowrkConnection : INetworkConnection
     {
         public int timing { get; set; } = 10;
-        public Action<IRPacket> OnPacketRecive { get; set; }
+        public Action<IRPacket> OnPacketRecive { get; set; } = _ => { };
         public INetworkBuffer ReciveBuffer { get; set; } = new NetworkBuffer();
         public INetworkBuffer SendBuffer { get; set; } = new NetworkBuffer();
 

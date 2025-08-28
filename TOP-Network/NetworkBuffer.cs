@@ -45,10 +45,10 @@ public class NetworkBuffer : INetworkBuffer
     {
         var p = Peek(2);// Dynamic sizing
         if (p.Length < 2) throw new Exception("Not packet size");
-        IPacket sizePacket = new Packet();
+        IPacket sizePacket = new Packet{ LongSize = false};
         sizePacket.Init(p);
         if (sizePacket.Size > Remaining) throw new Exception("Packet in in buffer");
-        IRPacket retunValue = new RPacket();
+        IRPacket retunValue = new RPacket{LongSize = false};
         retunValue.Init(ReadBuffer(sizePacket.Size));
         return retunValue;
     }

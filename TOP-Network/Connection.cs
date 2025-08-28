@@ -13,7 +13,7 @@ namespace TOP_Network;
 
 public class Connection : IConnection
 {
-    private readonly ILogger<Connection> _logger;
+    protected readonly ILogger<Connection> _logger;
     private readonly IConectionFactory conectionFactory;
 
     public bool IsServer { get; private set; } = false;
@@ -40,9 +40,6 @@ public class Connection : IConnection
 
         this.Port = port;
         this.IP = IPAddress.Parse(IP);
-
-        Thread t = new Thread(Start);
-        t.Start();
     }
 
     public async Task StartAsServer()
@@ -54,12 +51,16 @@ public class Connection : IConnection
         {
             conectionFactory.StartListener(IP, Port);
 
+            _logger.LogInformation("Listening in: {0}:{1}", IP, Port);
+
             while (true)
             {
                 var client = await conectionFactory.AcceptConnection();
                 new Thread(async () => await Connect(client)).Start();
             }
         }).Start();
+
+        await Task.Delay(1);
     }
 
     public async Task StartAsClient()
@@ -82,7 +83,17 @@ public class Connection : IConnection
 
     public async Task HandelPacket(IRPacket packet, int connection)
     {
-        
+        if (Calls.ContainsKey(packet.GNACK))
+        {
+            Calls[packet.GNACK] = packet;
+            return;
+        }
+
+        var replyPacket = await OnHandelPacket(packet, connection);
+        if (replyPacket != null)
+        {
+            ReplyPacket(packet, replyPacket, connection);
+        }
     }
 
     public async Task KeepAlive()
@@ -171,7 +182,13 @@ public class Connection : IConnection
     }
     public void ReplyPacket(IRPacket originalPacket, IPacket sendPacket, int connection = 0)
     {
-        
+        using var ReplayPacket = this.StartActivity("Replaying packet");
+
+        ReplayPacket?.SetTag("Conenction", connection);
+        ReplayPacket?.SetTag("OGCommand", originalPacket.Command);
+
+        sendPacket.WriteGnack(originalPacket.GNACK + 2147483648);
+        Send(sendPacket, connection);
     }
 
     public void Disconect(int connection = 0)

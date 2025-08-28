@@ -13,7 +13,7 @@ public class Packet : IPacket
 
     public bool ValidGnack => GNACK == 2147483648;
 
-    public PacketStream Stream { get; private set; }
+    public PacketStream Stream { get; private set; } = new PacketStream([]);
 
     public PacketReader? Reader { get; private set; }
     public PacketWriter? Writer { get; private set; }
@@ -101,6 +101,5 @@ public class Packet : IPacket
 
         Reader = null;
         Writer = null;
-        Stream = null;
     }
 }

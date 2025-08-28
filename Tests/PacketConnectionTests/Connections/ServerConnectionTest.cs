@@ -36,7 +36,7 @@ public class ServerConnectionTest
     }
 
     [Fact]
-    public async Task StartServer()
+    public void StartServer()
     {
         
         IConnection connection = new TestServerConnection(TestLogger, new EmptyConnectionFactory());

@@ -35,8 +35,8 @@ public class RPacket : Packet, IRPacket
     public ushort ReadUShort() => GetReader().ReadType<ushort>();
     public long ReadLongLong() => GetReader().ReadType<long>();
     public ulong ReadULongLong() => GetReader().ReadType<ulong>();
-    public string ReadString() => GetReader().ReadType<string>().Replace("\0", "");
-    public byte[] ReadSeq() => GetReader().ReadType<byte[]>();
+    public string ReadString() => GetReader().ReadType<string>()!.Replace("\0", "");
+    public byte[] ReadSeq() => GetReader().ReadType<byte[]>()!;
 
     public byte ReverseReadChar()
     {
