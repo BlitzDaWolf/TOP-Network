@@ -53,6 +53,8 @@ public class Connection : IConnection
 
             _logger.LogInformation("Listening in: {0}:{1}", IP, Port);
 
+            _ = KeepAlive();
+
             while (true)
             {
                 var client = await conectionFactory.AcceptConnection();
@@ -107,7 +109,7 @@ public class Connection : IConnection
             for (int i = 0; i < connections.Length; i++)
             {
                 if (!IsConnected(i)) continue;
-                
+                Send(p, i);
             }
         }
     }
@@ -139,10 +141,7 @@ public class Connection : IConnection
             var a = Task.WaitAny(Client.ReciveLoop(), Client.SendLoop());
 
         }
-        catch (Exception e)
-        {
-
-        }
+        catch (Exception e) { }
         finally
         {
             _logger.LogInformation("Connection [{0}] has been closed", emptySpot);
@@ -178,7 +177,20 @@ public class Connection : IConnection
 
     public async Task<IRPacket?> SyncCall(IPacket pkt, int timeOut = 10_000, int connection = 0)
     {
-        return null;
+        pkt.WriteGnack(++PacketId);
+
+        var test = pkt.GNACK + 2147483648;
+
+        Calls.Add(test, null);
+        Send(pkt, connection);
+
+        var delay = Task.Delay(timeOut);
+        while (Calls[test] == null && !delay.IsCompleted) await Task.Delay(1); 
+
+        var result = Calls[test];
+        Calls.Remove(test);
+
+        return result;
     }
     public void ReplyPacket(IRPacket originalPacket, IPacket sendPacket, int connection = 0)
     {

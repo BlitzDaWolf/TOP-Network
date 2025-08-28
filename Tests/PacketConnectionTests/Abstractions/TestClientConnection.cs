@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using TOP_Network;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
+using TOP_Network.Packets;
 
 namespace PacketConnectionTests.Abstractions;
 
@@ -38,6 +39,16 @@ public class TestClientConnection : Connection, IConnection
     public override Task<IPacket?> OnHandelPacket(IRPacket packet, int connection)
     {
         Assert.Equal(0, connection);
-        return base.OnHandelPacket(packet, connection);
+        HandledPackets++;
+        base.OnHandelPacket(packet, connection);
+
+        if (packet.Command == TOP_Network.Enum.Commands.CMD_CM_PING)
+        {
+            IWPacket wpk = new WPacket();
+            wpk.WriteCommand(TOP_Network.Enum.Commands.CMD_MC_PING);
+            wpk.WriteLong(50);
+            return Task.FromResult<IPacket?>(wpk);
+        }
+        return Task.FromResult<IPacket?>(null);
     }
 }

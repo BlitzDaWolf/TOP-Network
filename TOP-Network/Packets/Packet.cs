@@ -77,7 +77,7 @@ public class Packet : IPacket
 
     public void WriteGnack(uint NewGNACK)
     {
-        byte[] data = BitConverter.GetBytes(NewGNACK);
+        byte[] data = BitConverter.GetBytes(NewGNACK).Reverse().ToArray();
         for (int i = 0; i < data.Length; i++) this.Data[i + StartSize] = data[i];
     }
 
