@@ -1,187 +1,105 @@
-﻿using System.Drawing;
 using TOP_Network.Enum;
-using TOP_Network.Extention;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using TOP_Network.Interfaces.Packets;
+using TOP_Network.Packets.Streams;
 
-namespace TOP_Network.Packets
+namespace TOP_Network.Packets;
+
+public class Packet : IPacket
 {
-    public class Packet
+    public bool LongSize { get; set; } = false;
+    public int StartSize => LongSize ? 4 : 2;
+
+    public byte[] Data { get; private set; } = Array.Empty<byte>();
+
+    public bool ValidGnack => GNACK == 2147483648;
+
+    public PacketStream Stream { get; private set; } = new PacketStream([]);
+
+    public PacketReader? Reader { get; private set; }
+    public PacketWriter? Writer { get; private set; }
+
+    public uint GNACK => BitConverter.ToUInt32(Data.Skip(StartSize).Take(4).Reverse().ToArray());
+    public int Size => (int)(LongSize ? BitConverter.ToUInt32(Data.Take(StartSize).Reverse().ToArray(), 0) : BitConverter.ToUInt16(Data.Take(StartSize).Reverse().ToArray(), 0));
+    public Commands Command => (Commands)BitConverter.ToInt16(Data.Skip(StartSize + 4).Take(2).Reverse().ToArray());
+
+    public IPacket Clone<T>() where T : IPacket, new()
     {
-        public static bool LongSize = true;
-        public static int StartSize => LongSize ? 4 : 2;
+        var pkt = new T();
 
-        public byte[] Data { get; set; } = new byte[0];
-        public bool ValidGnack => gnack == 2147483648;
-        private Stream? _stream { get; set; }
+        pkt.Init(Data);
+        pkt.LongSize = LongSize;
 
-        public uint gnack => BitConverter.ToUInt32(Data.Skip(StartSize).Take(4).Reverse().ToArray());
-        public int Size => (int)(LongSize? BitConverter.ToUInt32(Data.Take(StartSize).Reverse().ToArray(), 0): BitConverter.ToUInt16(Data.Take(StartSize).Reverse().ToArray(), 0));
-        public Commands Command => (Commands)BitConverter.ToInt16(Data.Skip(StartSize+4).Take(2).Reverse().ToArray());
+        return pkt;
+    }
 
-        public Packet() { }
-        public Packet(byte[] data) => Init(data);
 
-        public void Init(byte[] data)
+    public PacketStream GetStream() => Stream;
+    public PacketReader GetReader()
+    {
+        if (Reader == null) Reader = new PacketReader(Stream);
+        return Reader;
+    }
+    public PacketWriter GetWriter()
+    {
+        if (Writer == null) Writer = new PacketWriter(Stream);
+        return Writer;
+    }
+
+    public virtual void Init(byte[] data)
+    {
+        Data = data;
+        Stream = new PacketStream(Data);
+        Stream.Position = 4 + StartSize;
+    }
+
+    public void Remove(int amount)
+    {
+        // Stream.Position -= amount;
+        for (int i = Stream.Position; i < Data.Length - amount; i++)
         {
-            // if (data.Length < 6 + StartSize) throw new Exception("Not enough data to be a valid packet");
-            Data = data;
-            _stream = new MemoryStream(Data, true);
-            _stream.Position = 0;
+            Data[i] = Data[i + amount];
         }
+        WriteSize(Size - amount);
+        Data = Data.Take(Size).ToArray();
+    }
 
-        public Stream GetStream() => _stream ?? throw new Exception("The packet has not been initialized");
+    public virtual void RemoveLast(int amount)
+    {
+        WriteSize(Size - amount);
+        Data = Data.Take(Size).ToArray();
+    }
 
-        private BinaryReader? _reader;
-        private BinaryWriter? _writter;
+    public void WriteCommand(Commands commands)
+    {
+        byte[] data = BitConverter.GetBytes((short)commands).Reverse().ToArray();
+        for (int i = 0; i < data.Length; i++) this.Data[i + StartSize + 4] = data[i];
+    }
 
-        public BinaryReader GetBitReader()
-        {
-            if (_stream == null)
-            {
-                _stream = new MemoryStream(Data, true);
-                _stream.Position = 6+Packet.StartSize;
-                _reader = new PacketReader(GetStream());
-            }
-            if (_reader == null) _reader = new PacketReader(GetStream());
-            if (!_stream.CanWrite)
-            {
-                var currentPosition = _stream.CanSeek? _stream.Position : 6 + Packet.StartSize;
-                _stream = new MemoryStream(Data, true);
-                _stream.Position = currentPosition;
-                _reader = new PacketReader(GetStream());
-            }
-            return _reader;
-        }
-        public BinaryWriter GetBitWriter() {
-            if (_stream == null)
-            {
-                _stream = new MemoryStream(Data, true);
-                _stream.Position = Size;
-                _writter = new BinaryWriter(_stream);
-            }
-            if(_writter==null) _writter = new BinaryWriter(GetStream());
-            if (!_stream.CanWrite)
-            {
-                _stream = new MemoryStream(Data, true);
-                _stream.Position = Size;
-                _writter = new BinaryWriter(_stream);
-            }
-            return _writter;
-        }
+    public void WriteGnack(uint NewGNACK)
+    {
+        byte[] data = BitConverter.GetBytes(NewGNACK).Reverse().ToArray();
+        for (int i = 0; i < data.Length; i++) this.Data[i + StartSize] = data[i];
+    }
 
-        // public BinaryReader GetBitReader() => new PacketReader(GetStream());
-        // public BinaryWriter GetBitWriter() => new BinaryWriter(GetStream());
+    public void WriteSize(int newSize)
+    {
+        byte[] data;
 
-        public void WriteSize(int size)
-        {
-            using var writer = GetBitWriter();
-            var currentPos = writer.BaseStream.Position;
+        if (LongSize) data = BitConverter.GetBytes(newSize);
+        else data = BitConverter.GetBytes((short)newSize);
 
-            byte[] data = [];
+        data = data.Reverse().ToArray();
 
-            if (LongSize)
-            {
-                data = BitConverter.GetBytes(size);
-            }
-            else
-            {
-                data = BitConverter.GetBytes((short)size);
-            }
+        for (int i = 0; i < data.Length; i++) this.Data[i] = data[i];
+    }
 
-            data = data.Reverse().ToArray();
-            for (int i = 0; i < data.Length; i++) this.Data[i] = data[i];
-            writer.BaseStream.Position = size;
-        }
+    public byte[] GetData() => Data.Take(Size).ToArray();
+    
+    public void Final()
+    {
+        if (Stream != null) Stream.Close();
 
-        public void WriteNewGnack(uint gnac)
-        {
-            var data = BitConverter.GetBytes(gnac).Reverse().ToArray();
-            for (int i = 0; i < data.Length; i++) this.Data[StartSize+ i] = data[i];
-        }
-
-        public void WriteCMD(Commands command)
-        {
-            var data = BitConverter.GetBytes((short)command).Reverse().ToArray();
-            for (int i = 0; i < data.Length; i++) this.Data[StartSize + i+4] = data[i];
-        }
-
-        public virtual Packet Clone()
-        {
-            return new Packet(Data.Take(Size).ToArray());
-        }
-
-        public virtual void RemoveLast(int size)
-        {
-            for (int i = this.Size - size; i < this.Size; i++)
-            {
-                Data[i] = 0;
-            }
-            Data =Data.Take(this.Size - size).ToArray();
-            WriteSize(this.Size - size);
-        }
-
-        public string DisplayHex() => /*Display(); =>*/ $"{BitConverter.ToString(Data.Take(Size).ToArray()).Replace("-", " ")}";
-
-        public void Save(string Path)
-        {
-            File.WriteAllBytes(Path, Data);
-        }
-
-        public void AddRandomGnack()
-        {
-            var rnd = new byte[2];
-            Random.Shared.NextBytes(rnd);
-            Data[StartSize + 3] = rnd[0];
-            Data[StartSize + 2] = rnd[1];
-        }
-
-        public int ReadPlayer()
-        {
-            var v = Data.TakeLast(4).Reverse().ToArray();
-            return BitConverter.ToInt32(v);
-        }
-
-        public void Final()
-        {
-            if (_reader != null) _reader.Close();
-            if (_writter != null) _writter.Close();
-            if (_stream != null) _stream.Close();
-
-            _reader = null;
-            _writter = null;
-            _stream = null;
-        }
-
-        public string Display()
-        {
-            var res = "";
-            var data = Data.Take(Size).ToList();
-            var rest = data.Count % 16;
-            for (int i = 0; i < rest; i++) data.Add(0);
-            for (int i = 0; i < data.Count / 16; i++)
-            {
-                var l = data.Skip(i * 16).Take(16).ToArray();
-                var r = string.Join("", l.Select(x => x >= 0x20 && x <= 0x7d ? (char)x : '.'));
-                res += "\n" + BitConverter.ToString(l).Replace("-", " ") + "\t" + r;
-            }
-            return res;
-        }
-
-        public byte[] GetData() => Data.Take(Size).ToArray();
-
-        public static string Diffrence(WPacket wpk, Packet pkt)
-        {
-            string res = "";
-            var size = Math.Min(wpk.Size, pkt.Size);
-            for (int i = 0; i < size / 16; i++)
-            {
-                var l = wpk.Data.Skip(i*16).Take(16).ToArray();
-                var r = pkt.Data.Skip(i*16).Take(16).ToArray();
-
-                var d = l.Select((x, i) => (byte)(x ^ r[i])).ToArray();
-                res += "\n" + BitConverter.ToString(d);
-            }
-            return res;
-        }
+        Reader = null;
+        Writer = null;
     }
 }

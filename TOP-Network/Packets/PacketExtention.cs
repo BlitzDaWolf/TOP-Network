@@ -1,12 +1,14 @@
+using TOP_Network.Interfaces.Packets;
+
 namespace TOP_Network.Packets;
 
 public static class PacketExtention
 {
-    public static RPacket GetRPacket(this Packet packet, bool reset = true)
+    /*public static IRPacket GetRPacket(this IPacket packet, bool reset = true)
     {
-        RPacket rpkt = new RPacket(packet.Data.ToArray());
+        / *RPacket rpkt = new RPacket(packet.Data.ToArray());
         if(reset)
-            packet.Final();
-        return rpkt;
-    }
+            packet.Final();* /
+        return packet.Clone<RPacket>();
+    }*/
 }
