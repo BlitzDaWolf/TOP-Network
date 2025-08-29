@@ -20,6 +20,15 @@ public class WPacket : Packet, IWPacket
         GetWriter().WriteBytes(packet.Data);
     }
 
+    public override void Init(byte[] data)
+    {
+        if (data.Length > Data.Length)
+            base.Init(data);
+        GetStream().Position = 0;
+        GetWriter().WriteBytes(data);
+        GetStream().Position = Size;
+    }
+
     public bool WriteChar(byte value)
     {
         GetWriter().WriteType(value);

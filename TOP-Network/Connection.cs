@@ -61,7 +61,7 @@ public class Connection : IConnection
             while (true)
             {
                 var client = await conectionFactory.AcceptConnection();
-                new Thread(() => Connect(client).Wait()).Start();
+                _ = Connect(client);
             }
         }
         catch (Exception e)
@@ -76,12 +76,15 @@ public class Connection : IConnection
     {
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Client has not been initialized");
         INetworkConnection client = conectionFactory.CreateConnection(IP, Port);
-        Thread t = new Thread(async () => await Connect(client));
-        t.Start();
         if (waitTillExit)
         {
-            t.Join();
+            await Connect(client);
         }
+        else
+        {
+            _ =Connect(client);
+        }
+
         await Task.Delay(1);
     }
 
