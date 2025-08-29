@@ -1,8 +1,11 @@
 using Microsoft.Extensions.Logging;
+using System.Configuration.Assemblies;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
+using TOP_Network.Attributes;
 using TOP_Network.Exceptions;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
@@ -44,6 +47,13 @@ public class Connection : IConnection
         this.IP = IPAddress.Parse(IP);
 
         Start();
+
+        var connectionAttribute = GetType().GetCustomAttribute<ConnectionAttribute>();
+        if (connectionAttribute != null)
+        {
+            if (connectionAttribute is ServerAttribute) _ = StartAsServer();
+            if (connectionAttribute is ClientAttribute) StartAsClient(((ClientAttribute)connectionAttribute).Wait).Wait();
+        }
     }
 
     public async Task StartAsServer()
@@ -61,7 +71,7 @@ public class Connection : IConnection
             while (true)
             {
                 var client = await conectionFactory.AcceptConnection();
-                new Thread(() => Connect(client).Wait()).Start();
+                _ = Connect(client);
             }
         }
         catch (Exception e)
@@ -76,12 +86,15 @@ public class Connection : IConnection
     {
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Client has not been initialized");
         INetworkConnection client = conectionFactory.CreateConnection(IP, Port);
-        Thread t = new Thread(async () => await Connect(client));
-        t.Start();
         if (waitTillExit)
         {
-            t.Join();
+            await Connect(client);
         }
+        else
+        {
+            _ =Connect(client);
+        }
+
         await Task.Delay(1);
     }
 
@@ -95,6 +108,7 @@ public class Connection : IConnection
     }
     public virtual Task OnDisconect(int socket) => Task.CompletedTask;
 
+    public virtual void OnPreHandel(IRPacket packet, IMethodBag Bag) { }
     public async Task HandelPacket(IRPacket packet, int connection)
     {
         if (packet.Size == 2)
@@ -108,10 +122,29 @@ public class Connection : IConnection
             return;
         }
 
-        var replyPacket = await OnHandelPacket(packet, connection);
-        if (replyPacket != null)
+        MethodInfo? methods = GetType().GetMethods()
+            .FirstOrDefault(x => x.GetCustomAttribute<PacketHandleAttribute>() != null && x.GetCustomAttribute<PacketHandleAttribute>()!.CommandType == packet.Command);
+
+        if (methods != null)
         {
-            ReplyPacket(packet, replyPacket, connection);
+            ParameterInfo[] parameters = methods.GetParameters();
+
+            IMethodBag bag = new MethodBag(parameters);
+            bag.SetValue("packet", packet);
+
+            OnPreHandel(packet, bag);
+
+            var values = parameters.Select(x => bag.GetValue(x.Name)).ToArray();
+
+            methods.Invoke(this, values);
+        }
+        else
+        {
+            var replyPacket = await OnHandelPacket(packet, connection);
+            if (replyPacket != null)
+            {
+                ReplyPacket(packet, replyPacket, connection);
+            }
         }
     }
 
@@ -175,6 +208,7 @@ public class Connection : IConnection
             await OnDisconect(emptySpot);
         }
     }
+
 
     public int FindEmpty()
     {

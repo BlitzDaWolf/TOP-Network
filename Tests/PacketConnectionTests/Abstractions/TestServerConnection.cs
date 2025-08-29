@@ -1,11 +1,13 @@
 using Microsoft.Extensions.Logging;
 using TOP_Network;
+using TOP_Network.Attributes;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
 
 namespace PacketConnectionTests.Abstractions;
 
-public class TestServerConnection : Connection, IConnection
+[Server]
+public class TestServerConnection : Connection
 {
     public int ConnectedCall { get; private set; }
     public int DisconnectedCall { get; private set; }

@@ -45,7 +45,7 @@ public class ServerConnectionTest
         Assert.Equal("192.167.0.1", connection.IP.ToString());
         Assert.Equal(789, connection.Port);
 
-        _ = connection.StartAsServer();
+        // _ = connection.StartAsServer();
         Assert.True(connection.IsServer);
     }
 
@@ -59,7 +59,7 @@ public class ServerConnectionTest
         Assert.Equal("192.167.0.1", connection.IP.ToString());
         Assert.Equal(789, connection.Port);
 
-        _ = connection.StartAsServer();
+        // _ = connection.StartAsServer();
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         Assert.True(connection.IsServer);
@@ -109,7 +109,7 @@ public class ServerConnectionTest
         Assert.Equal("192.167.0.1", connection.IP.ToString());
         Assert.Equal(789, connection.Port);
 
-        _ = connection.StartAsServer();
+        // _ = connection.StartAsServer();
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         Assert.True(connection.IsServer);
@@ -147,7 +147,7 @@ public class ServerConnectionTest
         TestServerConnection connection = new TestServerConnection(TestLogger, factory);
         connection.Init("192.167.0.1", 789);
 
-        _ = connection.StartAsServer();
+        // _ = connection.StartAsServer();
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         Assert.True(connection.IsServer);
