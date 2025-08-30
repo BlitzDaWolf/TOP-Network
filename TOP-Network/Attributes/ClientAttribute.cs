@@ -2,7 +2,7 @@ using System;
 
 namespace TOP_Network.Attributes;
 
-[AttributeUsage(AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
 public class ClientAttribute : ConnectionAttribute
 {
     public readonly bool Wait;

@@ -5,7 +5,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using TOP_Network.Attributes;
+using TOP_Network.Enum;
 using TOP_Network.Exceptions;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
@@ -45,6 +47,19 @@ public class Connection : IConnection
 
         this.Port = port;
         this.IP = IPAddress.Parse(IP);
+
+        var methods = GetType().GetMethods().Where(x => x.GetCustomAttribute<PacketHandleAttribute>() != null).ToArray();
+        _logger.LogInformation("Commands in: {0}", GetType());
+        for (int i = 0; i < methods.Length; i++)
+        {
+            var m = methods[i];
+            var handeler = m.GetCustomAttribute<PacketHandleAttribute>()!.CommandType;
+
+            var name = (handeler.ToString());
+            var code = ((short)handeler);
+
+            _logger.LogInformation("Command: {0} | {1}", code, name);
+        }
 
         Start();
 
@@ -92,7 +107,7 @@ public class Connection : IConnection
         }
         else
         {
-            _ =Connect(client);
+            _ = Connect(client);
         }
 
         await Task.Delay(1);
@@ -113,7 +128,7 @@ public class Connection : IConnection
     {
         if (packet.Size == 2)
         {
-            if (!IsServer) Send(packet, connection); 
+            if (!IsServer) Send(packet, connection);
             return;
         }
         if (Calls.ContainsKey(packet.GNACK))
@@ -136,7 +151,27 @@ public class Connection : IConnection
 
             var values = parameters.Select(x => bag.GetValue(x.Name)).ToArray();
 
-            methods.Invoke(this, values);
+            IPacket? replyPacket = null;
+
+            if (methods.ReturnType == typeof(Task<IPacket>))
+            {
+                var tmp = (Task<IPacket>)methods.Invoke(this, values)!;
+                await tmp.WaitAsync(CancellationToken.None);
+                replyPacket = tmp.Result;
+            }
+            else if (methods.ReturnType == typeof(IPacket))
+            {
+                replyPacket = (IPacket)methods.Invoke(this, values)!;
+            }
+            else
+            {
+                methods.Invoke(this, values);
+            }
+
+            if (replyPacket != null)
+            {
+                ReplyPacket(packet, replyPacket, connection);
+            }
         }
         else
         {
@@ -151,7 +186,7 @@ public class Connection : IConnection
     public async Task KeepAlive()
     {
         IPacket p = new Packet();
-        p.Init([ 0x00, 0x02 ]);
+        p.Init([0x00, 0x02]);
         while (true)
         {
             try
@@ -166,7 +201,7 @@ public class Connection : IConnection
             }
             catch
             {
-                
+
             }
         }
     }
@@ -244,7 +279,7 @@ public class Connection : IConnection
         Send(pkt, connection);
 
         var delay = Task.Delay(timeOut);
-        while (Calls[test] == null && !delay.IsCompleted) await Task.Delay(1); 
+        while (Calls[test] == null && !delay.IsCompleted) await Task.Delay(1);
 
         var result = Calls[test];
         Calls.Remove(test);
@@ -276,26 +311,26 @@ public class Connection : IConnection
         }
     }
     public bool IsConnected(int connection = 0) => this.connections[connection] is not null;
-}
 
-[ExcludeFromCodeCoverage]
-public class Connection<T> where T : IConnection
-{
-    public static T Instance { get => _instance ?? throw new Exception("Instance has not been set"); }
-    private static T? _instance;// = new T();
 
-    public static void SetInstance(T i)
+    public IPacket RequestCommands()
     {
-        if (_instance != null) return; _instance = i;
+        var methods = GetType().GetMethods().Where(x => x.GetCustomAttribute<PacketHandleAttribute>() != null).ToArray();
+
+        IWPacket wpk = new WPacket();
+        wpk.WriteCommand(Commands.CMD_UU_COMMANDS);
+        wpk.WriteShort((short)Errors.ERR_SUCCESS);
+
+        wpk.WriteShort((short)methods.Length);
+        for (int i = 0; i < methods.Length; i++)
+        {
+            var m = methods[i];
+            var handeler = m.GetCustomAttribute<PacketHandleAttribute>()!.CommandType;
+
+            wpk.WriteShort((short)handeler);
+            wpk.WriteString(handeler.ToString());
+        }
+
+        return wpk;
     }
-
-    public static void Send(IRPacket pkt, int connection = 0) => Instance.Send(pkt, connection);
-    public static void SendToAll(IRPacket pkt) => Instance.SendToAll(pkt);
-    public static void Init(string ip="", int port =0) => Instance.Init(ip, port);
-
-    public static void Disconect(int socket) => Instance.Disconect(socket);
-
-    public static Task<IRPacket?> SyncCall(IRPacket wpk, int timeOut = 1_000) => Instance.SyncCall(wpk, timeOut);
-
-    public static void DisconectAll() => Instance.DisconectAll();
 }

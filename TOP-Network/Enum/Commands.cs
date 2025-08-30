@@ -563,6 +563,7 @@
         CMD_SO_GAMEUPDATE = 7011,
 
 
-        CMD_UU_SYNC = 8001
+        CMD_UU_SYNC = 8001,
+        CMD_UU_COMMANDS = 8002
     }
 }
