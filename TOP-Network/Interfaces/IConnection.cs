@@ -16,6 +16,8 @@ public interface IConnection
 
     public void Init(string IP = "", int port = 0);
 
+    public void DisplayComamnds();
+
     public Task StartAsServer();
     public Task StartAsClient(bool waitTillExit = false);
 

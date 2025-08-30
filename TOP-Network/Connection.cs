@@ -40,14 +40,8 @@ public class Connection : IConnection
 
     public uint PacketId { get; private set; }
 
-    public void Init(string IP = "", int port = 0)
+    public void DisplayComamnds()
     {
-        if (string.IsNullOrEmpty(IP)) throw new InvalidIPInitException("Empty IP was given");
-        if (port <= 0) throw new InvalidPortInitException("Not an valid port was given");
-
-        this.Port = port;
-        this.IP = IPAddress.Parse(IP);
-
         var methods = GetType().GetMethods().Where(x => x.GetCustomAttribute<PacketHandleAttribute>() != null).ToArray();
         _logger.LogInformation("Commands in: {0}", GetType());
         for (int i = 0; i < methods.Length; i++)
@@ -60,6 +54,25 @@ public class Connection : IConnection
 
             _logger.LogInformation("Command: {0} | {1}", code, name);
         }
+    }
+
+    public void Init(string IP = "", int port = 0)
+    {
+        if (string.IsNullOrEmpty(IP)) throw new InvalidIPInitException("Empty IP was given");
+        if (port <= 0) throw new InvalidPortInitException("Not an valid port was given");
+
+        this.Port = port;
+         
+
+        if (!IPAddress.TryParse(IP, out var Ip))
+        {
+            IPHostEntry resolved = Dns.GetHostEntry(IP);
+            if (resolved.AddressList.Length == 0) throw new InvalidPortInitException("Not an valid port was given");
+            Ip = Dns.GetHostEntry(IP).AddressList.FirstOrDefault()!;
+        }
+
+        this.IP = Ip;
+
 
         Start();
 
