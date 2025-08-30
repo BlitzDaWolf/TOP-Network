@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using PacketConnectionTests.Abstractions;
 using PacketConnectionTests.Abstractions.Facotries;
+using TOP_Network;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
 
@@ -15,6 +16,7 @@ public class GeneralConnectionTest
     public GeneralConnectionTest()
     {
         TestLogger = LoggerFactory.Create(conf => conf.ClearProviders()).CreateLogger<TestGeneralConnection>();
+        NetworkCommand<TestGeneralConnection>.InitCommands();
     }
 
     [Fact]
@@ -24,7 +26,7 @@ public class GeneralConnectionTest
 
         var mockConnection = new Mock<TestGeneralConnection>(TestLogger, factory);
 
-        mockConnection.Setup(x => x.OnPreHandel(It.IsAny<IRPacket>(), It.IsAny<IMethodBag>()))
+        mockConnection.Setup(x => x.OnPreHandel(It.IsAny<IRPacket>(), 0, It.IsAny<IMethodBag>()))
             .CallBase();
         mockConnection.Setup(x => x.OnHandelPacket(It.IsAny<IRPacket>(), It.IsAny<int>()))
             .CallBase();

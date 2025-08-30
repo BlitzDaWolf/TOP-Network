@@ -8,7 +8,7 @@ public interface IMethodBag
     public Dictionary<string, IParameterBag> Values { get; }
 
     public object? GetValue(string value);
-    public void SetValue(string key, object value);
+    public void SetValue(string key, object? value);
 }
 
 public interface IParameterBag
@@ -17,5 +17,5 @@ public interface IParameterBag
     public Type ParameterType { get; init; }
     public object? Value { get; }
 
-    public void SetValue(object value);
+    public void SetValue(object? value);
 }

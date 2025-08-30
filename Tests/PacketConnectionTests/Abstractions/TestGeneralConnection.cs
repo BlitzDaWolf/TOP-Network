@@ -10,14 +10,14 @@ using TOP_Network.Interfaces.Packets;
 namespace PacketConnectionTests.Abstractions;
 
 [Client(false)]
-public class TestGeneralConnection : Connection
+public class TestGeneralConnection : Connection<TestGeneralConnection>
 {
-    public TestGeneralConnection(ILogger<Connection> logger, IConectionFactory conectionFactory)
+    public TestGeneralConnection(ILogger<TestGeneralConnection> logger, IConectionFactory conectionFactory)
         : base(logger, conectionFactory, 1)
     {
     }
 
-    public override void OnPreHandel(IRPacket packet, IMethodBag Bag)
+    public override void OnPreHandel(IRPacket packet, int connection, IMethodBag Bag)
     {
         switch (packet.Command)
         {
@@ -29,7 +29,7 @@ public class TestGeneralConnection : Connection
                 Bag.SetValue("hallo", "test");
                 break;
             default:
-                base.OnPreHandel(packet, Bag);
+                base.OnPreHandel(packet, connection, Bag);
                 break;
         }
 

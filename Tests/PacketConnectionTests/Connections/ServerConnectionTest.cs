@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PacketConnectionTests.Abstractions;
@@ -32,7 +33,7 @@ public class ServerConnectionTest
         IConnection connection = new TestServerConnection(TestLogger, new EmptyConnectionFactory());
         Assert.Throws<InvalidPortInitException>(() => connection.Init("192.167.0.1", 0));
         Assert.Throws<InvalidIPInitException>(() => connection.Init("", 1234));
-        Assert.Throws<FormatException>(() => connection.Init("123.345.567.789", 1234));
+        Assert.Throws<SocketException>(() => connection.Init("123.345.567.789", 1234));
     }
 
     [Fact]

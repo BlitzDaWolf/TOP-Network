@@ -9,7 +9,7 @@ using TOP_Network.Packets;
 namespace PacketConnectionTests.Abstractions;
 
 [Client(false)]
-public class TestClientConnection : Connection
+public class TestClientConnection : Connection<TestClientConnection>
 {
     public int ConnectedCall { get; private set; }
     public int DisconnectedCall { get; private set; }

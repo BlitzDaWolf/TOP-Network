@@ -5,7 +5,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using TOP_Network.Attributes;
+using TOP_Network.Enum;
 using TOP_Network.Exceptions;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
@@ -14,9 +16,9 @@ using TOP_Utils;
 
 namespace TOP_Network;
 
-public class Connection : IConnection
+public abstract class Connection<T> : IConnection where T : IConnection 
 {
-    protected readonly ILogger<Connection> _logger;
+    protected readonly ILogger<Connection<T>> _logger;
     private readonly IConectionFactory conectionFactory;
 
     public bool IsServer { get; private set; } = false;
@@ -29,11 +31,13 @@ public class Connection : IConnection
 
     private Task? RunningLoop;
 
-    public Connection(ILogger<Connection> logger, IConectionFactory conectionFactory, int maxClients = 10)
+    public Connection(ILogger<Connection<T>> logger, IConectionFactory conectionFactory, int maxClients = 10)
     {
         connections = new INetworkConnection?[maxClients];
         _logger = logger;
         this.conectionFactory = conectionFactory;
+
+        NetworkCommand<T>.InitCommands();
     }
 
     public uint PacketId { get; private set; }
@@ -44,7 +48,14 @@ public class Connection : IConnection
         if (port <= 0) throw new InvalidPortInitException("Not an valid port was given");
 
         this.Port = port;
-        this.IP = IPAddress.Parse(IP);
+        if (!IPAddress.TryParse(IP, out var Ip))
+        {
+            IPHostEntry resolved = Dns.GetHostEntry(IP);
+            if (resolved.AddressList.Length == 0) throw new InvalidPortInitException("Not an valid port was given");
+            Ip = Dns.GetHostEntry(IP).AddressList.FirstOrDefault()!;
+        }
+
+        this.IP = Ip;
 
         Start();
 
@@ -92,7 +103,7 @@ public class Connection : IConnection
         }
         else
         {
-            _ =Connect(client);
+            _ = Connect(client);
         }
 
         await Task.Delay(1);
@@ -101,6 +112,7 @@ public class Connection : IConnection
     public virtual void Start() { }
     public virtual Task OnConnected() => Task.CompletedTask;
     public virtual Task OnConnected(int socket) => Task.CompletedTask;
+    public virtual void OnPreHandel(IRPacket packet, int connection, IMethodBag Bag) { }
     public virtual Task<IPacket?> OnHandelPacket(IRPacket packet, int connection)
     {
         _logger.LogInformation("Function not overwriten: [{0}]@{1}", packet.Command, connection);
@@ -108,12 +120,11 @@ public class Connection : IConnection
     }
     public virtual Task OnDisconect(int socket) => Task.CompletedTask;
 
-    public virtual void OnPreHandel(IRPacket packet, IMethodBag Bag) { }
     public async Task HandelPacket(IRPacket packet, int connection)
     {
         if (packet.Size == 2)
         {
-            if (!IsServer) Send(packet, connection); 
+            if (!IsServer) Send(packet, connection);
             return;
         }
         if (Calls.ContainsKey(packet.GNACK))
@@ -122,25 +133,9 @@ public class Connection : IConnection
             return;
         }
 
-        MethodInfo? methods = GetType().GetMethods()
-            .FirstOrDefault(x => x.GetCustomAttribute<PacketHandleAttribute>() != null && x.GetCustomAttribute<PacketHandleAttribute>()!.CommandType == packet.Command);
-
-        if (methods != null)
+        if(!NetworkCommand<T>.TrHandlePacket((T)(IConnection)this, packet, connection, out IPacket? replyPacket, OnPreHandel))
         {
-            ParameterInfo[] parameters = methods.GetParameters();
-
-            IMethodBag bag = new MethodBag(parameters);
-            bag.SetValue("packet", packet);
-
-            OnPreHandel(packet, bag);
-
-            var values = parameters.Select(x => bag.GetValue(x.Name)).ToArray();
-
-            methods.Invoke(this, values);
-        }
-        else
-        {
-            var replyPacket = await OnHandelPacket(packet, connection);
+            replyPacket = await OnHandelPacket(packet, connection);
             if (replyPacket != null)
             {
                 ReplyPacket(packet, replyPacket, connection);
@@ -151,7 +146,7 @@ public class Connection : IConnection
     public async Task KeepAlive()
     {
         IPacket p = new Packet();
-        p.Init([ 0x00, 0x02 ]);
+        p.Init([0x00, 0x02]);
         while (true)
         {
             try
@@ -166,7 +161,7 @@ public class Connection : IConnection
             }
             catch
             {
-                
+
             }
         }
     }
@@ -209,7 +204,6 @@ public class Connection : IConnection
         }
     }
 
-
     public int FindEmpty()
     {
         for (int i = 0; i < connections.Length; i++)
@@ -244,7 +238,7 @@ public class Connection : IConnection
         Send(pkt, connection);
 
         var delay = Task.Delay(timeOut);
-        while (Calls[test] == null && !delay.IsCompleted) await Task.Delay(1); 
+        while (Calls[test] == null && !delay.IsCompleted) await Task.Delay(1);
 
         var result = Calls[test];
         Calls.Remove(test);
@@ -276,26 +270,26 @@ public class Connection : IConnection
         }
     }
     public bool IsConnected(int connection = 0) => this.connections[connection] is not null;
-}
 
-[ExcludeFromCodeCoverage]
-public class Connection<T> where T : IConnection
-{
-    public static T Instance { get => _instance ?? throw new Exception("Instance has not been set"); }
-    private static T? _instance;// = new T();
 
-    public static void SetInstance(T i)
+    public IPacket RequestCommands()
     {
-        if (_instance != null) return; _instance = i;
+        var methods = GetType().GetMethods().Where(x => x.GetCustomAttribute<PacketHandleAttribute>() != null).ToArray();
+
+        IWPacket wpk = new WPacket();
+        wpk.WriteCommand(Commands.CMD_UU_COMMANDS);
+        wpk.WriteShort((short)Errors.ERR_SUCCESS);
+
+        wpk.WriteShort((short)methods.Length);
+        for (int i = 0; i < methods.Length; i++)
+        {
+            var m = methods[i];
+            var handeler = m.GetCustomAttribute<PacketHandleAttribute>()!.CommandType;
+
+            wpk.WriteShort((short)handeler);
+            wpk.WriteString(handeler.ToString());
+        }
+
+        return wpk;
     }
-
-    public static void Send(IRPacket pkt, int connection = 0) => Instance.Send(pkt, connection);
-    public static void SendToAll(IRPacket pkt) => Instance.SendToAll(pkt);
-    public static void Init(string ip="", int port =0) => Instance.Init(ip, port);
-
-    public static void Disconect(int socket) => Instance.Disconect(socket);
-
-    public static Task<IRPacket?> SyncCall(IRPacket wpk, int timeOut = 1_000) => Instance.SyncCall(wpk, timeOut);
-
-    public static void DisconectAll() => Instance.DisconectAll();
 }

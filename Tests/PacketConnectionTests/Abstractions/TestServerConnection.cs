@@ -7,13 +7,13 @@ using TOP_Network.Interfaces.Packets;
 namespace PacketConnectionTests.Abstractions;
 
 [Server]
-public class TestServerConnection : Connection
+public class TestServerConnection : Connection<TestServerConnection>
 {
     public int ConnectedCall { get; private set; }
     public int DisconnectedCall { get; private set; }
     public int HandledPackets { get; private set; }
 
-    public TestServerConnection(ILogger<Connection> logger, IConectionFactory conectionFactory, int maxClients = 2)
+    public TestServerConnection(ILogger<TestServerConnection> logger, IConectionFactory conectionFactory, int maxClients = 2)
         : base(logger, conectionFactory, maxClients) { }
 
 
