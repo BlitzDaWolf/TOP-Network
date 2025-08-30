@@ -16,9 +16,9 @@ using TOP_Utils;
 
 namespace TOP_Network;
 
-public class Connection : IConnection
+public abstract class Connection<T> : IConnection where T : IConnection 
 {
-    protected readonly ILogger<Connection> _logger;
+    protected readonly ILogger<Connection<T>> _logger;
     private readonly IConectionFactory conectionFactory;
 
     public bool IsServer { get; private set; } = false;
@@ -31,30 +31,16 @@ public class Connection : IConnection
 
     private Task? RunningLoop;
 
-    public Connection(ILogger<Connection> logger, IConectionFactory conectionFactory, int maxClients = 10)
+    public Connection(ILogger<Connection<T>> logger, IConectionFactory conectionFactory, int maxClients = 10)
     {
         connections = new INetworkConnection?[maxClients];
         _logger = logger;
         this.conectionFactory = conectionFactory;
+
+        NetworkCommand<T>.InitCommands();
     }
 
     public uint PacketId { get; private set; }
-
-    public void DisplayComamnds()
-    {
-        var methods = GetType().GetMethods().Where(x => x.GetCustomAttribute<PacketHandleAttribute>() != null).ToArray();
-        _logger.LogInformation("Commands in: {0}", GetType());
-        for (int i = 0; i < methods.Length; i++)
-        {
-            var m = methods[i];
-            var handeler = m.GetCustomAttribute<PacketHandleAttribute>()!.CommandType;
-
-            var name = (handeler.ToString());
-            var code = ((short)handeler);
-
-            _logger.LogInformation("Command: {0} | {1}", code, name);
-        }
-    }
 
     public void Init(string IP = "", int port = 0)
     {
@@ -62,8 +48,6 @@ public class Connection : IConnection
         if (port <= 0) throw new InvalidPortInitException("Not an valid port was given");
 
         this.Port = port;
-         
-
         if (!IPAddress.TryParse(IP, out var Ip))
         {
             IPHostEntry resolved = Dns.GetHostEntry(IP);
@@ -72,7 +56,6 @@ public class Connection : IConnection
         }
 
         this.IP = Ip;
-
 
         Start();
 
@@ -129,6 +112,7 @@ public class Connection : IConnection
     public virtual void Start() { }
     public virtual Task OnConnected() => Task.CompletedTask;
     public virtual Task OnConnected(int socket) => Task.CompletedTask;
+    public virtual void OnPreHandel(IRPacket packet, int connection, IMethodBag Bag) { }
     public virtual Task<IPacket?> OnHandelPacket(IRPacket packet, int connection)
     {
         _logger.LogInformation("Function not overwriten: [{0}]@{1}", packet.Command, connection);
@@ -136,7 +120,6 @@ public class Connection : IConnection
     }
     public virtual Task OnDisconect(int socket) => Task.CompletedTask;
 
-    public virtual void OnPreHandel(IRPacket packet, IMethodBag Bag) { }
     public async Task HandelPacket(IRPacket packet, int connection)
     {
         if (packet.Size == 2)
@@ -150,45 +133,9 @@ public class Connection : IConnection
             return;
         }
 
-        MethodInfo? methods = GetType().GetMethods()
-            .FirstOrDefault(x => x.GetCustomAttribute<PacketHandleAttribute>() != null && x.GetCustomAttribute<PacketHandleAttribute>()!.CommandType == packet.Command);
-
-        if (methods != null)
+        if(!NetworkCommand<T>.TrHandlePacket((T)(IConnection)this, packet, connection, out IPacket? replyPacket, OnPreHandel))
         {
-            ParameterInfo[] parameters = methods.GetParameters();
-
-            IMethodBag bag = new MethodBag(parameters);
-            bag.SetValue("packet", packet);
-
-            OnPreHandel(packet, bag);
-
-            var values = parameters.Select(x => bag.GetValue(x.Name)).ToArray();
-
-            IPacket? replyPacket = null;
-
-            if (methods.ReturnType == typeof(Task<IPacket>))
-            {
-                var tmp = (Task<IPacket>)methods.Invoke(this, values)!;
-                await tmp.WaitAsync(CancellationToken.None);
-                replyPacket = tmp.Result;
-            }
-            else if (methods.ReturnType == typeof(IPacket))
-            {
-                replyPacket = (IPacket)methods.Invoke(this, values)!;
-            }
-            else
-            {
-                methods.Invoke(this, values);
-            }
-
-            if (replyPacket != null)
-            {
-                ReplyPacket(packet, replyPacket, connection);
-            }
-        }
-        else
-        {
-            var replyPacket = await OnHandelPacket(packet, connection);
+            replyPacket = await OnHandelPacket(packet, connection);
             if (replyPacket != null)
             {
                 ReplyPacket(packet, replyPacket, connection);
@@ -256,7 +203,6 @@ public class Connection : IConnection
             await OnDisconect(emptySpot);
         }
     }
-
 
     public int FindEmpty()
     {
