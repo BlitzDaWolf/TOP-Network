@@ -66,6 +66,7 @@ public class WPacket : Packet, IWPacket
 
     public bool WriteString(string value)
     {
+        if (value.Length == 0) value += "\0";
         if (value.Last() != '\0') value += "\0";
 
         GetWriter().WriteType(value);

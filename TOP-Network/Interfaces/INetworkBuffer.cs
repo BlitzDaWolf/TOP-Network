@@ -5,8 +5,8 @@ namespace TOP_Network.Interfaces;
 public interface INetworkBuffer
 {
     public List<byte> Data { get; }
-    public bool EOF{ get; }
-    public int Remaining{ get; }
+    public bool EOF { get; }
+    public int Remaining { get; }
 
     public void SafeStep();
     public byte[] ReadBuffer(int size);

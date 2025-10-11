@@ -69,7 +69,7 @@ public class GeneralConnectionTest
 
         mockConnection.Verify(x => x.HandleWithArgumentsPacket(It.IsAny<IRPacket>(), It.IsAny<int>()), Times.AtLeastOnce());
     }
-    
+
     [Fact]
     public async Task DoubleArgumentPacket()
     {

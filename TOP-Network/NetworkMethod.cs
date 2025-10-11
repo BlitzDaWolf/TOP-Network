@@ -1,14 +1,16 @@
 using System;
 using System.Reflection;
+using System.Xml.Schema;
 using Microsoft.Extensions.Logging;
 using TOP_Network.Attributes;
 using TOP_Network.Enum;
 using TOP_Network.Interfaces;
 using TOP_Network.Interfaces.Packets;
+using TOP_Network.Packets;
 
 namespace TOP_Network;
 
-public static class NetworkCommand<T> where T : IConnection
+public static class NetworkCommand<T>
 {
     public delegate void PreHandelDelegate(IRPacket packet, int connection, IMethodBag Bag);
 
@@ -25,18 +27,27 @@ public static class NetworkCommand<T> where T : IConnection
 
     public static void DisplayMethods(ILogger _logger)
     {
-        _logger.LogInformation("Commands in: {0}", typeof(T));
+        _logger.LogInformation("Commands in: {type}", typeof(T));
         // for (int i = 0; i < ComamndMethods.Count; i++)
         foreach (var command in ComamndMethods.Keys)
         {
             var name = command.ToString();
             var code = (short)command;
 
-            _logger.LogInformation("Command: {0} | {1}", code, name);
+            _logger.LogInformation("Command: {0} | {1}@{2}", code, name, ComamndMethods[command].Name);
         }
     }
 
-    public static bool TrHandlePacket(T caller, IRPacket packet, int connection, out IPacket? ReplyPacket, PreHandelDelegate OnPreHandel)
+    public static bool TryHandlePacket(T caller, IRPacket packet)
+        => TryHandlePacket(caller, packet, 0);
+
+    public static bool TryHandlePacket(T caller, IRPacket packet, int connection)
+        => TryHandlePacket(caller, packet, connection, out var _);
+
+    public static bool TryHandlePacket(T caller, IRPacket packet, int connection, out IPacket? ReplyPacket)
+        => TryHandlePacket(caller, packet, connection, out ReplyPacket, (_, _, _) => { });
+
+    public static bool TryHandlePacket(T caller, IRPacket packet, int connection, out IPacket? ReplyPacket, PreHandelDelegate OnPreHandel)
     {
         ReplyPacket = null;
         if (ComamndMethods.ContainsKey(packet.Command))
@@ -46,8 +57,16 @@ public static class NetworkCommand<T> where T : IConnection
 
             IMethodBag bag = new MethodBag(parameters);
             bag.SetValue("packet", packet);
+            bag.SetValue("connection", connection);
 
-            OnPreHandel(packet, connection, bag);
+            if (parameters.Length == 0)
+            {
+                throw new Exception("The command needs atleast the `IRPacket` value");
+            }
+            if (parameters.Length != 1)
+            {
+                OnPreHandel(packet, connection, bag);
+            }
 
             var values = parameters.Select(x => bag.GetValue(x.Name!)).ToArray();
 
@@ -67,6 +86,8 @@ public static class NetworkCommand<T> where T : IConnection
             {
                 methods.Invoke(caller, values);
             }
+
+            ReplyPacket = replyPacket;
             return true;
         }
         return false;

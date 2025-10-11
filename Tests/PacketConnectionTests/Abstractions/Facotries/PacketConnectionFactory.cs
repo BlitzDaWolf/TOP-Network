@@ -26,7 +26,7 @@ public class PacketConnectionFactory : IConectionFactory
 
         public void Close()
         {
-            
+
         }
 
         public async Task ReciveLoop()
@@ -43,6 +43,7 @@ public class PacketConnectionFactory : IConectionFactory
                 OnPacketRecive(ReciveBuffer.ReadPacket());
             }
         }
+        public uint GetIP() => 0;
     }
 
     public PacketNetowrkConnection Default { get; set; } = new PacketNetowrkConnection();

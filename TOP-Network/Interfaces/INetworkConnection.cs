@@ -9,11 +9,12 @@ public interface INetworkConnection
     public Action<IRPacket> OnPacketRecive { get; set; }
 
     public INetworkBuffer ReciveBuffer { get; set; }
-    public INetworkBuffer SendBuffer{ get; set; }
-    public INetworkStream Stream{ get; }
+    public INetworkBuffer SendBuffer { get; set; }
+    public INetworkStream Stream { get; }
 
     public void Close();
 
     public Task ReciveLoop();
     public Task SendLoop();
+    public uint GetIP();
 }

@@ -38,10 +38,10 @@ public class ParameterBag : IParameterBag
     public string Name { get; init; }
     public Type ParameterType { get; init; }
 
-    public object? Value{ get; set; }
+    public object? Value { get; set; }
 
     public void SetValue(object value)
     {
         if (ParameterType == value.GetType() || ParameterType.IsAssignableFrom(value.GetType())) Value = value;
     }
-} 
+}

@@ -94,7 +94,7 @@ public class Packet : IPacket
     }
 
     public byte[] GetData() => Data.Take(Size).ToArray();
-    
+
     public void Final()
     {
         if (Stream != null) Stream.Close();

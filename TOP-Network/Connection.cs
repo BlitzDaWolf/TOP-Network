@@ -1,11 +1,6 @@
 using Microsoft.Extensions.Logging;
-using System.Configuration.Assemblies;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using TOP_Network.Attributes;
 using TOP_Network.Enum;
 using TOP_Network.Exceptions;
@@ -16,10 +11,10 @@ using TOP_Utils;
 
 namespace TOP_Network;
 
-public abstract class Connection<T> : IConnection where T : IConnection 
+public abstract class Connection<T> : IConnection where T : IConnection
 {
     protected readonly ILogger<Connection<T>> _logger;
-    private readonly IConectionFactory conectionFactory;
+    private readonly IConectionFactory _connectionFactory;
 
     public bool IsServer { get; private set; } = false;
     public IPAddress IP { get; set; } = IPAddress.Any;
@@ -31,11 +26,11 @@ public abstract class Connection<T> : IConnection where T : IConnection
 
     private Task? RunningLoop;
 
-    public Connection(ILogger<Connection<T>> logger, IConectionFactory conectionFactory, int maxClients = 10)
+    protected Connection(ILogger<Connection<T>> logger, IConectionFactory connectionFactory, int maxClients = 10)
     {
         connections = new INetworkConnection?[maxClients];
         _logger = logger;
-        this.conectionFactory = conectionFactory;
+        this._connectionFactory = connectionFactory;
 
         NetworkCommand<T>.InitCommands();
     }
@@ -62,41 +57,45 @@ public abstract class Connection<T> : IConnection where T : IConnection
         var connectionAttribute = GetType().GetCustomAttribute<ConnectionAttribute>();
         if (connectionAttribute != null)
         {
-            if (connectionAttribute is ServerAttribute) _ = StartAsServer();
-            if (connectionAttribute is ClientAttribute) StartAsClient(((ClientAttribute)connectionAttribute).Wait).Wait();
+            switch (connectionAttribute)
+            {
+                case ServerAttribute:
+                    _ = StartAsServer();
+                    break;
+                case ClientAttribute attribute:
+                    StartAsClient(attribute.Wait).Wait();
+                    break;
+            }
         }
     }
 
     public async Task StartAsServer()
     {
-        if (IP == IPAddress.Any || Port == 0) throw new Exception("Server has not been initialized");
+        using var serverActivity = this.StartActivity("server start activity");
+        if (Port == 0) throw new Exception("Server has not been initialized");
         IsServer = true;
 
-        conectionFactory.StartListener(IP, Port);
+        _connectionFactory.StartListener(IP, Port);
         try
         {
-            List<Task> connections = new List<Task>();
-
             _ = KeepAlive();
-            _logger.LogInformation("Listening in: {0}:{1}", IP, Port);
+            _logger.LogInformation("Listening in: {ipaddress}:{port}", IP, Port);
+            serverActivity?.Stop();
             while (true)
             {
-                var client = await conectionFactory.AcceptConnection();
+                var client = await _connectionFactory.AcceptConnection();
                 _ = Connect(client);
             }
         }
-        catch (Exception e)
+        finally
         {
-
         }
-
-        var enbd = "";
     }
 
     public async Task StartAsClient(bool waitTillExit = false)
     {
         if (IP == IPAddress.Any || Port == 0) throw new Exception("Client has not been initialized");
-        INetworkConnection client = conectionFactory.CreateConnection(IP, Port);
+        INetworkConnection client = _connectionFactory.CreateConnection(IP, Port);
         if (waitTillExit)
         {
             await Connect(client);
@@ -112,10 +111,10 @@ public abstract class Connection<T> : IConnection where T : IConnection
     public virtual void Start() { }
     public virtual Task OnConnected() => Task.CompletedTask;
     public virtual Task OnConnected(int socket) => Task.CompletedTask;
-    public virtual void OnPreHandel(IRPacket packet, int connection, IMethodBag Bag) { }
+    public virtual void OnPreHandel(IRPacket packet, int connection, IMethodBag bag) { }
     public virtual Task<IPacket?> OnHandelPacket(IRPacket packet, int connection)
     {
-        _logger.LogInformation("Function not overwriten: [{0}]@{1}", packet.Command, connection);
+        _logger.LogInformation("Function not overwritten: [{functionName}]@{socket}", packet.Command, connection);
         return Task.FromResult<IPacket?>(null);
     }
     public virtual Task OnDisconect(int socket) => Task.CompletedTask;
@@ -133,13 +132,13 @@ public abstract class Connection<T> : IConnection where T : IConnection
             return;
         }
 
-        if(!NetworkCommand<T>.TrHandlePacket((T)(IConnection)this, packet, connection, out IPacket? replyPacket, OnPreHandel))
+        if (!NetworkCommand<T>.TryHandlePacket((T)(IConnection)this, packet, connection, out var replyPacket, OnPreHandel))
         {
             replyPacket = await OnHandelPacket(packet, connection);
-            if (replyPacket != null)
-            {
-                ReplyPacket(packet, replyPacket, connection);
-            }
+        }
+        if (replyPacket != null)
+        {
+            ReplyPacket(packet, replyPacket, connection);
         }
     }
 
@@ -152,24 +151,22 @@ public abstract class Connection<T> : IConnection where T : IConnection
             try
             {
                 await Task.Delay(2000);
-                // foreach (var a in connections)
                 for (int i = 0; i < connections.Length; i++)
                 {
                     if (!IsConnected(i)) continue;
                     Send(p, i);
                 }
             }
-            catch
+            finally
             {
-
             }
         }
     }
 
-    public async Task Connect(INetworkConnection Client)
+    private async Task Connect(INetworkConnection client)
     {
         await Task.Delay(100);
-        _logger.LogInformation("Conenction has been made");
+        _logger.LogInformation("Connection has been made");
 
         var emptySpot = FindEmpty();
         if (emptySpot == -1)
@@ -182,7 +179,7 @@ public abstract class Connection<T> : IConnection where T : IConnection
 
         try
         {
-            connections[emptySpot] = Client;
+            connections[emptySpot] = client;
 
             using (var act = this.StartActivity("On connected"))
             {
@@ -190,15 +187,14 @@ public abstract class Connection<T> : IConnection where T : IConnection
                 _ = OnConnected(emptySpot);
             }
 
-            Client.OnPacketRecive += (pkt) => _ = HandelPacket(pkt, emptySpot);
-            var a = Task.WaitAny(Client.ReciveLoop(), Client.SendLoop());
+            client.OnPacketRecive += (pkt) => _ = HandelPacket(pkt, emptySpot);
+            var a = Task.WaitAny(client.ReciveLoop(), client.SendLoop());
 
         }
-        catch (Exception e) { }
         finally
         {
-            _logger.LogInformation("Connection [{0}] has been closed", emptySpot);
-            Client.Close();
+            _logger.LogInformation("Connection [{socket}] has been closed", emptySpot);
+            client.Close();
             connections[emptySpot] = null;
             await OnDisconect(emptySpot);
         }
@@ -215,7 +211,7 @@ public abstract class Connection<T> : IConnection where T : IConnection
 
     public void Send(IPacket pkt, int connection)
     {
-        if (!IsConnected(connection)) return; // Connection is disconected 
+        if (!IsConnected(connection)) return; // Connection is disconnected 
         connections[connection]!.SendBuffer.AddData(pkt);
     }
 
@@ -249,7 +245,7 @@ public abstract class Connection<T> : IConnection where T : IConnection
     {
         using var ReplayPacket = this.StartActivity("Replaying packet");
 
-        ReplayPacket?.SetTag("Conenction", connection);
+        ReplayPacket?.SetTag("Connection", connection);
         ReplayPacket?.SetTag("OGCommand", originalPacket.Command);
 
         sendPacket.WriteGnack(originalPacket.GNACK + 2147483648);
@@ -258,7 +254,7 @@ public abstract class Connection<T> : IConnection where T : IConnection
 
     public void Disconect(int connection = 0)
     {
-        if (!IsConnected(connection)) return; // Already disconected 
+        if (!IsConnected(connection)) return; // Already disconnected 
         connections[connection]!.Close();
         connections[connection] = null;
     }
@@ -270,26 +266,4 @@ public abstract class Connection<T> : IConnection where T : IConnection
         }
     }
     public bool IsConnected(int connection = 0) => this.connections[connection] is not null;
-
-
-    public IPacket RequestCommands()
-    {
-        var methods = GetType().GetMethods().Where(x => x.GetCustomAttribute<PacketHandleAttribute>() != null).ToArray();
-
-        IWPacket wpk = new WPacket();
-        wpk.WriteCommand(Commands.CMD_UU_COMMANDS);
-        wpk.WriteShort((short)Errors.ERR_SUCCESS);
-
-        wpk.WriteShort((short)methods.Length);
-        for (int i = 0; i < methods.Length; i++)
-        {
-            var m = methods[i];
-            var handeler = m.GetCustomAttribute<PacketHandleAttribute>()!.CommandType;
-
-            wpk.WriteShort((short)handeler);
-            wpk.WriteString(handeler.ToString());
-        }
-
-        return wpk;
-    }
 }

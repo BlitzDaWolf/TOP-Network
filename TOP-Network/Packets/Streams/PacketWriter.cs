@@ -21,7 +21,7 @@ public class PacketWriter
         for (int i = 0; i < data.Length; i++)
         {
             Stream.Position++;
-            Stream.data[Stream.Position-1] = data[i];
+            Stream.data[Stream.Position - 1] = data[i];
         }
     }
 
@@ -29,5 +29,5 @@ public class PacketWriter
     {
         Stream.data[Stream.Position++] = data;
     }
-    
+
 }

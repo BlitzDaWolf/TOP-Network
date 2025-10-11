@@ -17,8 +17,6 @@ public class NetworkBuffer : INetworkBuffer
 
     public void SafeStep()
     {
-        using var stepActiveit = this.StartActivity("safeStep");
-        stepActiveit?.SetTag("remove", ToRemove);
         lock (Data)
         {
             Data.RemoveRange(0, ToRemove);
@@ -45,10 +43,10 @@ public class NetworkBuffer : INetworkBuffer
     {
         var p = Peek(2);// Dynamic sizing
         if (p.Length < 2) throw new Exception("Not packet size");
-        IPacket sizePacket = new Packet{ LongSize = false};
+        IPacket sizePacket = new Packet { LongSize = false };
         sizePacket.Init(p);
         if (sizePacket.Size > Remaining) throw new Exception("Packet in in buffer");
-        IRPacket retunValue = new RPacket{LongSize = false};
+        IRPacket retunValue = new RPacket { LongSize = false };
         retunValue.Init(ReadBuffer(sizePacket.Size));
         return retunValue;
     }

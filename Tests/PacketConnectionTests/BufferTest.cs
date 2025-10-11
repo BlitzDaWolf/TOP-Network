@@ -151,6 +151,6 @@ public class BufferTest
     {
         NetworkBuffer buffer = new NetworkBuffer();
         buffer.AddData([0xFF]);
-        Assert.Throws<Exception>(()=>buffer.ReadBuffer(2));
+        Assert.Throws<Exception>(() => buffer.ReadBuffer(2));
     }
 }

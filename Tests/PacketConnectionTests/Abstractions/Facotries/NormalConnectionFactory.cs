@@ -31,11 +31,12 @@ public class NormalConnectionFactory : IConectionFactory
         public Task ReciveLoop() => Task.Delay(TimeSpan.FromSeconds(timing));
 
         public Task SendLoop() => Task.Delay(TimeSpan.FromSeconds(timing));
+        public uint GetIP() => 0;
     }
 
     public NormalNetowrkConnection Default { get; set; } = new NormalNetowrkConnection();
     public bool IsStep { get; private set; } = false;
-    public int timing { get; set; } = 10; 
+    public int timing { get; set; } = 10;
 
     public async Task Next()
     {
@@ -47,16 +48,16 @@ public class NormalConnectionFactory : IConectionFactory
     {
         while (!IsStep) await Task.Delay(1);
         IsStep = false;
-        return new NormalNetowrkConnection{timing = timing};
+        return new NormalNetowrkConnection { timing = timing };
     }
 
     public INetworkConnection CreateConnection(IPAddress ip, int port)
     {
-        return new NormalNetowrkConnection{timing = timing};
+        return new NormalNetowrkConnection { timing = timing };
     }
 
     public void StartListener(IPAddress ip, int port)
     {
-        
+
     }
 }

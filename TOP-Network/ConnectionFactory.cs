@@ -26,6 +26,8 @@ public class ConectionFactory : IConectionFactory
             Stream = stream;
         }
 
+        public uint GetIP() => Stream.GetIP();
+
         public void Close()
         {
             Stream.Close();
@@ -91,6 +93,13 @@ public class ConectionFactory : IConectionFactory
         {
             Stream.Close();
             Client.Close();
+        }
+
+        public uint GetIP()
+        {
+            IPEndPoint remoteEndPoint = Client.Client.RemoteEndPoint as IPEndPoint;
+            var bytes = remoteEndPoint.Address.GetAddressBytes();
+            return BitConverter.ToUInt32(bytes);
         }
 
         public async Task<int> ReadAsync(byte[] buffer) => await Stream.ReadAsync(buffer, 0, buffer.Count());

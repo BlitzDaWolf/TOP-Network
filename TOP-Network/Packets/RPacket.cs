@@ -58,7 +58,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - 4;
 
         var val = ReadLong();
-        ReversePoint+=4;
+        ReversePoint += 4;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -71,7 +71,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - 4;
 
         var val = ReadULong();
-        ReversePoint+=4;
+        ReversePoint += 4;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -84,7 +84,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - 2;
 
         var val = ReadShort();
-        ReversePoint+=2;
+        ReversePoint += 2;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -97,7 +97,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - 2;
 
         var val = ReadUShort();
-        ReversePoint+=2;
+        ReversePoint += 2;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -110,7 +110,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - 8;
 
         var val = ReadLongLong();
-        ReversePoint+=8;
+        ReversePoint += 8;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -123,7 +123,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - 8;
 
         var val = ReadULongLong();
-        ReversePoint+=8;
+        ReversePoint += 8;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -137,7 +137,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - size - 2;
 
         var val = ReadString();
-        ReversePoint+=size+2;
+        ReversePoint += size + 2;
         reader.BaseStream.Position = currentPos;
 
         return val;
@@ -151,7 +151,7 @@ public class RPacket : Packet, IRPacket
         reader.BaseStream.Position = Size - ReversePoint - size - 2;
 
         var val = ReadSeq();
-        ReversePoint+=size+2;
+        ReversePoint += size + 2;
         reader.BaseStream.Position = currentPos;
 
         return val;

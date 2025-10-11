@@ -33,6 +33,8 @@ public class DisconectConnectionFactory : IConectionFactory
         {
             while (connected) await Task.Delay(5);
         }
+
+        public uint GetIP() => 0;
     }
 
     public DisconectNetowrkConnection Default { get; set; } = new DisconectNetowrkConnection();
@@ -58,6 +60,6 @@ public class DisconectConnectionFactory : IConectionFactory
 
     public void StartListener(IPAddress ip, int port)
     {
-        
+
     }
 }

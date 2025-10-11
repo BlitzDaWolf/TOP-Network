@@ -25,13 +25,14 @@ public class EmptyConnectionFactory : IConectionFactory
         public Task ReciveLoop() => Task.CompletedTask;
 
         public Task SendLoop() => Task.CompletedTask;
+        public uint GetIP() => 0;
     }
 
     public async Task<INetworkConnection> AcceptConnection()
     {
         await Task.Delay(TimeSpan.FromSeconds(30));
-        return new EmptyNetowrkConnection();        
-    } 
+        return new EmptyNetowrkConnection();
+    }
 
     public INetworkConnection CreateConnection(IPAddress ip, int port) => new EmptyNetowrkConnection();
 

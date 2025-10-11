@@ -17,19 +17,19 @@ public class TestGeneralConnection : Connection<TestGeneralConnection>
     {
     }
 
-    public override void OnPreHandel(IRPacket packet, int connection, IMethodBag Bag)
+    public override void OnPreHandel(IRPacket packet, int connection, IMethodBag bag)
     {
         switch (packet.Command)
         {
             case Commands.CMD_CM_ENDACTION:
-                Bag.SetValue("testint", 5);
+                bag.SetValue("testint", 5);
                 break;
             case Commands.CMD_CM_SYNATTR:
-                Bag.SetValue("testint", 9);
-                Bag.SetValue("hallo", "test");
+                bag.SetValue("testint", 9);
+                bag.SetValue("hallo", "test");
                 break;
             default:
-                base.OnPreHandel(packet, connection, Bag);
+                base.OnPreHandel(packet, connection, bag);
                 break;
         }
 

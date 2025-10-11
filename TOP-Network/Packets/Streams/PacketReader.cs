@@ -36,10 +36,10 @@ public class PacketReader
 
 
     public T? ReadType<T>() => (T?)this.ReadType(typeof(T));
-/*    public byte[] ReadBytes(this PacketReader reader, int size, bool reverse = false)
-    {
-        return reverse ? this.ReadBytes(size).Reverse().ToArray() : this.ReadBytes(size);
-    }*/
+    /*    public byte[] ReadBytes(this PacketReader reader, int size, bool reverse = false)
+        {
+            return reverse ? this.ReadBytes(size).Reverse().ToArray() : this.ReadBytes(size);
+        }*/
 
     public object? ReadType(Type type, bool small = false)
     {

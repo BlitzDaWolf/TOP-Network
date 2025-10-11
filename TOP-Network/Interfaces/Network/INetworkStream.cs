@@ -8,4 +8,5 @@ public interface INetworkStream
     public Task WriteAsync(byte[] buffer);
 
     public void Close();
+    public uint GetIP();
 }
