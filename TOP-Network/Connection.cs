@@ -132,6 +132,10 @@ public abstract class Connection<T> : IConnection where T : IConnection
             return;
         }
 
+#if DEBUG
+        _logger.LogInformation("[{connectionType}] Received packet: {packetCommand}", GetType().Name, packet.Command);
+#endif
+        
         if (!NetworkCommand<T>.TryHandlePacket((T)(IConnection)this, packet, connection, out var replyPacket, OnPreHandel))
         {
             replyPacket = await OnHandelPacket(packet, connection);
